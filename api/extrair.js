@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
   const { texto } = req.body;
   if (!texto || texto.trim().length < 20) {
-    return res.status(400).json({ error: 'Texto muito curto. Cole a análise completa do Claude Chrome.' });
+    return res.status(400).json({ error: 'Texto muito curto.' });
   }
 
   const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
@@ -15,39 +15,76 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY não configurada.' });
   }
 
-  const prompt = `Você é um extrator de dados de perfis do Instagram médicos. 
-Analise o texto abaixo — que é uma análise feita pelo Claude navegando num perfil do Instagram — e extraia todos os dados estruturados que conseguir encontrar.
+  const prompt = `Você é um extrator de dados de diagnósticos de Instagram médicos.
+Analise o texto abaixo — gerado por uma análise detalhada de um perfil do Instagram — e extraia TODOS os dados estruturados possíveis.
+
+O texto pode seguir este formato estruturado:
+- PERFIL: handle | nome | especialidade | cidade
+- SEGUIDORES: número | POSTS: número
+- NOTAS (1-10) para dimensões como: Foto de perfil, Nome e @, Bio, Link e CTA, Destaques, Feed, Qualidade dos Reels, Legendas, Engajamento, SEO do Instagram
+- NOTA GERAL: 0-100 | FASE: iniciante/em crescimento/consolidado/autoridade
+- TOP 5 PROBLEMAS ordenados por impacto
+- TOP 3 PONTOS FORTES
+- POSICIONAMENTO ATUAL e IDEAL
+- ESTIMATIVA DE ALCANCE PERDIDO
 
 TEXTO DA ANÁLISE:
 """
 ${texto}
 """
 
-Responda APENAS com um JSON válido, sem markdown, sem texto antes ou depois. Use null para campos não encontrados.
+Responda APENAS com JSON válido, sem markdown. Use null para campos não encontrados. Arrays vazios [] quando não houver itens.
 
 {
-  "handle": "string ou null — @username do perfil",
-  "nome": "string ou null — nome completo do médico",
-  "especialidade": "string ou null — especialidade médica",
-  "cidade": "string ou null — cidade onde atua",
-  "seguidores": "number ou null — número de seguidores",
-  "seguindo": "number ou null — número de contas que segue",
-  "posts_total": "number ou null — total de publicações",
-  "bio": "string ou null — texto da bio completo",
-  "tem_link_bio": "boolean ou null — se tem link na bio",
-  "tem_crm": "boolean ou null — se CRM aparece na bio",
-  "tem_cta_agendamento": "boolean ou null — se tem CTA para agendamento",
-  "ultima_publicacao": "string ou null — quando foi a última publicação (ex: '3 dias atrás', '2 semanas')",
-  "frequencia_posts": "string ou null — frequência percebida (ex: 'diário', 'semanal', 'irregular')",
-  "usa_reels": "boolean ou null — se usa reels",
-  "usa_carrossel": "boolean ou null — se usa carrosséis",
-  "identidade_visual": "string ou null — 'consistente', 'inconsistente' ou 'sem padrão'",
-  "tom_conteudo": "string ou null — tom do conteúdo (ex: 'educativo', 'institucional', 'pessoal')",
-  "qualidade_foto": "string ou null — 'alta', 'média' ou 'baixa'",
-  "engajamento_estimado": "string ou null — avaliação do engajamento observado",
-  "pontos_fortes": ["array de strings com pontos positivos encontrados"],
-  "pontos_fracos": ["array de strings com pontos negativos encontrados"],
-  "observacoes": "string ou null — outras observações relevantes do texto"
+  "handle": "string ou null",
+  "nome": "string ou null",
+  "especialidade": "string ou null",
+  "cidade": "string ou null",
+  "seguidores": "number ou null",
+  "posts_total": "number ou null",
+  "bio_atual": "string ou null",
+  "tem_link_bio": "boolean ou null",
+  "tem_crm": "boolean ou null",
+  "tem_cta": "boolean ou null",
+  "ultima_publicacao": "string ou null",
+  "frequencia_atual": "string ou null — ex: '3x/mês', 'diário', 'irregular'",
+  "usa_reels": "boolean ou null",
+  "nota_geral": "number ou null — 0 a 100",
+  "fase": "string ou null — iniciante/em crescimento/consolidado/autoridade",
+  "alcance_perdido": "string ou null — ex: '70%', '~60%'",
+  "notas": {
+    "Foto de perfil": "number ou null",
+    "Nome e @": "number ou null",
+    "Bio": "number ou null",
+    "Link e CTA": "number ou null",
+    "Destaques": "number ou null",
+    "Feed": "number ou null",
+    "Qualidade dos Reels": "number ou null",
+    "Legendas": "number ou null",
+    "Engajamento": "number ou null",
+    "SEO do Instagram": "number ou null"
+  },
+  "comentarios_notas": {
+    "Foto de perfil": "string ou null — comentário da nota",
+    "Nome e @": "string ou null",
+    "Bio": "string ou null",
+    "Link e CTA": "string ou null",
+    "Destaques": "string ou null",
+    "Feed": "string ou null",
+    "Qualidade dos Reels": "string ou null",
+    "Legendas": "string ou null",
+    "Engajamento": "string ou null",
+    "SEO do Instagram": "string ou null"
+  },
+  "problemas": [
+    { "titulo": "string", "descricao": "string", "impacto": "alto/medio/baixo" }
+  ],
+  "pontos_fortes": [
+    { "titulo": "string", "descricao": "string" }
+  ],
+  "posicionamento_atual": "string ou null",
+  "posicionamento_ideal": "string ou null",
+  "observacoes": "string ou null"
 }`;
 
   try {
@@ -60,14 +97,14 @@ Responda APENAS com um JSON válido, sem markdown, sem texto antes ou depois. Us
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
 
     if (!response.ok) {
       const err = await response.text();
-      console.error('Anthropic error:', err);
+      console.error('Anthropic error:', response.status, err);
       return res.status(500).json({ error: 'Erro ao processar análise.' });
     }
 
@@ -78,7 +115,7 @@ Responda APENAS com um JSON válido, sem markdown, sem texto antes ou depois. Us
     try {
       parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
     } catch {
-      return res.status(500).json({ error: 'Não foi possível extrair dados estruturados. Tente colar mais texto.' });
+      return res.status(500).json({ error: 'Não foi possível extrair dados. Tente colar mais texto.' });
     }
 
     return res.status(200).json({ success: true, dados: parsed });
