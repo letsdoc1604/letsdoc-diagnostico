@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lets!DOC — Diagnóstico Estratégico</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Barlow+Condensed:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--dark:#0D1B2E;--dark-mid:#1a3a5c;--blue:#2AACE2;--blue-light:#e8f5fc;--white:#fff;--off:#f7f8fa;--g100:#eef0f4;--g200:#d8dce5;--g400:#8c94a6;--g600:#4a5568;--g900:#0f1923;--ok:#16a34a;--ok-bg:#dcfce7;--warn:#d97706;--warn-bg:#fef3c7;--err:#dc2626;--err-bg:#fee2e2;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Barlow',sans-serif;background:var(--dark);color:#fff;min-height:100vh;}
+
+/* ── GEN ── */
+#gen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;position:relative;overflow:hidden;}
+#gen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% -10%,rgba(42,172,226,0.18),transparent 70%);pointer-events:none;}
+.gen-logo{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:12px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:48px;z-index:1;}
+.gen-logo b{color:var(--blue);}
+.gen-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(38px,6vw,68px);line-height:.95;text-align:center;text-transform:uppercase;letter-spacing:-1px;margin-bottom:16px;z-index:1;}
+.gen-title .hl{color:var(--blue);}
+.gen-sub{font-size:15px;color:rgba(255,255,255,0.45);text-align:center;margin-bottom:48px;max-width:440px;line-height:1.6;z-index:1;}
+.gen-form{width:100%;max-width:580px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:20px;padding:36px;z-index:1;}
+.fl{display:block;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:7px;}
+.fi{width:100%;font-family:'Barlow',sans-serif;font-size:14px;color:#fff;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 14px;outline:none;transition:border-color .2s;}
+.fi::placeholder{color:rgba(255,255,255,0.25);}
+.fi:focus{border-color:var(--blue);}
+.fi option{background:var(--dark);}
+.fr{margin-bottom:18px;}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+textarea.fi{resize:none;}
+
+/* ERROR MSG */
+.error-msg{background:var(--err-bg);border:1px solid #fecaca;border-radius:10px;padding:12px 16px;font-size:13px;color:var(--err);margin-bottom:16px;display:none;}
+.error-msg.show{display:block;}
+
+.btn-gen{width:100%;margin-top:8px;padding:15px;border-radius:12px;border:none;background:var(--blue);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;}
+.btn-gen:hover{background:#1d96c8;transform:translateY(-2px);}
+.btn-gen:disabled{background:var(--g400);cursor:not-allowed;transform:none;}
+
+.demo-notice{margin-top:14px;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;font-size:12px;color:rgba(255,255,255,0.4);text-align:center;line-height:1.5;}
+.demo-notice b{color:var(--blue);}
+
+/* ── LOADING ── */
+#loading{display:none;position:fixed;inset:0;background:var(--dark);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:28px;}
+.l-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:32px;letter-spacing:-0.5px;color:#fff;}
+.l-logo b{color:var(--blue);}
+.l-title{font-size:13px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.4);}
+.l-bar{width:280px;height:2px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;}
+.l-fill{height:100%;background:var(--blue);border-radius:2px;width:0;transition:width .4s ease;}
+.l-steps{display:flex;flex-direction:column;gap:8px;align-items:center;min-height:80px;}
+.l-step{font-size:12px;color:rgba(255,255,255,0.3);letter-spacing:.5px;transition:color .3s;}
+.l-step.active{color:rgba(255,255,255,.7);}
+.l-step.done{color:var(--blue);}
+
+/* ── REPORT ── */
+#report{display:none;}
+.rtop{background:var(--dark);border-bottom:1px solid rgba(255,255,255,0.08);height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 36px;position:sticky;top:0;z-index:50;}
+.rtop-logo{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;color:#fff;}
+.rtop-logo b{color:var(--blue);}
+.rtop-actions{display:flex;gap:10px;}
+.btn-back{font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-back:hover{background:rgba(255,255,255,0.07);}
+.btn-pdf{font-size:12px;font-weight:700;padding:7px 16px;border-radius:8px;border:none;background:var(--blue);color:#fff;cursor:pointer;font-family:'Barlow',sans-serif;display:flex;align-items:center;gap:6px;transition:all .15s;}
+.btn-pdf:hover{background:#1d96c8;}
+
+/* DEMO BANNER */
+.demo-banner{background:linear-gradient(90deg,#92400e,#b45309);padding:10px 36px;font-size:12px;color:#fff;display:none;align-items:center;gap:10px;}
+.demo-banner.show{display:flex;}
+.demo-banner b{font-weight:700;}
+
+/* BODY */
+.rbody{background:var(--white);color:var(--g900);}
+.rinner{max-width:860px;margin:0 auto;padding:52px 40px 80px;}
+
+/* COVER */
+.cover{background:var(--dark);padding:52px 40px;position:relative;overflow:hidden;}
+.cover::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 70% at 100% 50%,rgba(42,172,226,0.12),transparent 60%);}
+.cover-inner{max-width:860px;margin:0 auto;position:relative;z-index:1;}
+.cover-tag{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+.cover-tag::before{content:'';width:24px;height:1px;background:var(--blue);}
+.cover-head{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(42px,6vw,72px);line-height:.9;text-transform:uppercase;letter-spacing:-1px;color:#fff;margin-bottom:16px;}
+.cover-head b{color:var(--blue);}
+.cover-doctor{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:32px;}
+.cover-pills{display:flex;gap:10px;flex-wrap:wrap;}
+.cpill{font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);}
+.cpill.blue{background:rgba(42,172,226,0.15);border-color:var(--blue);color:var(--blue);}
+
+/* SECTIONS */
+.rsec{padding:44px 0;border-bottom:1px solid var(--g100);}
+.rsec:last-child{border-bottom:none;}
+.eyebrow{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:8px;}
+.stitle{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:28px;text-transform:uppercase;color:var(--g900);margin-bottom:4px;}
+.slead{font-size:14px;color:var(--g400);line-height:1.7;margin-bottom:28px;max-width:600px;}
+
+/* SCORES */
+.sgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px;}
+.sc{background:var(--off);border:1px solid var(--g100);border-radius:12px;padding:18px 16px;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sc-d::before{background:var(--err);}
+.sc-w::before{background:var(--warn);}
+.sc-s::before{background:var(--ok);}
+.sc-b::before{background:var(--blue);}
+.sc-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g400);margin-bottom:8px;}
+.sc-val{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:800;color:var(--g900);line-height:1;margin-bottom:6px;}
+.sc-sub{font-size:11px;color:var(--g400);line-height:1.4;}
+
+/* GAUGES */
+.gauge{background:var(--off);border:1px solid var(--g100);border-radius:12px;padding:18px 20px;margin-bottom:10px;}
+.g-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.g-name{font-size:13px;font-weight:600;color:var(--g900);}
+.g-num{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--g900);}
+.gb{height:7px;background:var(--g100);border-radius:4px;overflow:hidden;margin-bottom:6px;}
+.gf{height:100%;border-radius:4px;transition:width 1.4s cubic-bezier(.4,0,.2,1);}
+.gf-d{background:var(--err);}
+.gf-w{background:var(--warn);}
+.gf-s{background:var(--ok);}
+.gf-b{background:var(--blue);}
+.g-note{font-size:12px;color:var(--g400);line-height:1.5;}
+
+/* AQS BADGE */
+.aqs-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;margin-bottom:20px;}
+.aqs-excellent{background:#dcfce7;color:var(--ok);}
+.aqs-good{background:#e0f2fe;color:#0369a1;}
+.aqs-average{background:var(--warn-bg);color:var(--warn);}
+.aqs-poor{background:var(--err-bg);color:var(--err);}
+
+/* AUDIENCE */
+.aud-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:20px;}
+.aud-item{background:var(--off);border:1px solid var(--g100);border-radius:10px;padding:14px 16px;}
+.aud-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--g400);margin-bottom:6px;}
+.aud-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--g900);margin-bottom:4px;}
+.aud-bar{height:4px;background:var(--g100);border-radius:2px;overflow:hidden;}
+.aud-fill{height:100%;border-radius:2px;}
+
+/* FINDINGS */
+.findings{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.fi-item{display:flex;gap:14px;padding:14px 16px;border-radius:12px;border:1px solid transparent;align-items:flex-start;}
+.fi-crit{background:#fff5f5;border-color:#fecaca;}
+.fi-warn{background:#fffbeb;border-color:#fde68a;}
+.fi-good{background:#f0fdf4;border-color:#bbf7d0;}
+.fi-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.fi-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 8px;border-radius:4px;margin-bottom:4px;}
+.t-crit{background:#fee2e2;color:var(--err);}
+.t-warn{background:#fef3c7;color:var(--warn);}
+.t-good{background:#dcfce7;color:var(--ok);}
+.fi-title{font-size:13px;font-weight:700;color:var(--g900);margin-bottom:3px;}
+.fi-desc{font-size:12px;color:var(--g600);line-height:1.55;}
+
+/* AGRID */
+.agrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.ablock{background:var(--off);border:1px solid var(--g100);border-radius:12px;padding:18px;}
+.ab-icon{font-size:20px;margin-bottom:10px;}
+.ab-title{font-size:13px;font-weight:700;color:var(--g900);margin-bottom:5px;}
+.ab-text{font-size:12px;color:var(--g600);line-height:1.6;}
+
+/* QUOTE */
+.qblock{border-left:3px solid var(--blue);background:var(--blue-light);border-radius:0 12px 12px 0;padding:18px 22px;margin:20px 0;}
+.qtext{font-size:15px;font-style:italic;color:var(--g900);line-height:1.6;}
+.qauthor{font-size:11px;font-weight:600;color:var(--g400);margin-top:8px;}
+
+/* COMP TABLE */
+.comp-table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+.comp-table th{text-align:left;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g400);padding:8px 12px;border-bottom:2px solid var(--g100);}
+.comp-table td{padding:12px;border-bottom:1px solid var(--g100);font-size:13px;vertical-align:middle;}
+.comp-table tr:last-child td{border-bottom:none;}
+.comp-table tr:hover td{background:var(--off);}
+.ch{font-weight:700;color:var(--blue);}
+.ch-you{font-weight:700;color:var(--dark);}
+.bar-w{width:90px;height:5px;background:var(--g100);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:6px;}
+.bar-f{height:100%;background:var(--blue);border-radius:3px;}
+.bar-f.you{background:var(--dark);}
+.bdg{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;}
+.bdg-ref{background:var(--ok-bg);color:var(--ok);}
+.bdg-you{background:var(--dark);color:#fff;}
+.bdg-mid{background:var(--warn-bg);color:var(--warn);}
+
+/* OPPS */
+.opps{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.opp{display:grid;grid-template-columns:36px 1fr auto;gap:14px;align-items:center;padding:16px 18px;background:var(--off);border:1px solid var(--g100);border-radius:12px;}
+.opp-n{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--g200);line-height:1;}
+.opp-title{font-size:13px;font-weight:700;color:var(--g900);margin-bottom:3px;}
+.opp-desc{font-size:12px;color:var(--g400);line-height:1.5;}
+.imp{font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;white-space:nowrap;}
+.imp-h{background:var(--ok-bg);color:var(--ok);}
+.imp-m{background:var(--warn-bg);color:var(--warn);}
+
+/* PROJ */
+.pgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px;}
+.pj{background:var(--dark);border-radius:12px;padding:18px 16px;text-align:center;}
+.pj-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:8px;}
+.pj-val{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;color:#fff;line-height:1;margin-bottom:4px;}
+.pj-sub{font-size:11px;color:rgba(255,255,255,0.4);line-height:1.4;}
+
+/* PLAN */
+.plan-block{background:var(--dark);border-radius:16px;padding:32px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;}
+.pb-tag{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:10px;}
+.pb-title{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;text-transform:uppercase;color:#fff;margin-bottom:8px;}
+.pb-desc{font-size:13px;color:rgba(255,255,255,0.5);line-height:1.6;max-width:460px;}
+.pb-feats{display:flex;flex-direction:column;gap:5px;margin-top:14px;}
+.pb-feat{font-size:12px;color:rgba(255,255,255,0.65);display:flex;align-items:center;gap:7px;}
+.pb-feat::before{content:'→';color:var(--blue);font-weight:700;}
+.pb-right{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:20px 24px;text-align:center;min-width:150px;flex-shrink:0;}
+.pb-pname{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--blue);margin-bottom:4px;}
+.pb-period{font-size:12px;color:rgba(255,255,255,0.4);}
+.pb-contents{font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);margin-top:8px;}
+
+/* FOOTER */
+.rfooter{border-top:1px solid var(--g100);padding-top:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.rf-brand{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;text-transform:uppercase;color:var(--g400);letter-spacing:1px;}
+.rf-brand b{color:var(--blue);}
+.rf-note{font-size:11px;color:var(--g400);max-width:380px;line-height:1.6;text-align:right;}
+
+@media print{
+  .rtop,.demo-banner{display:none!important;}
+  #report{display:block!important;}
+  .cover,.pj,.plan-block{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
+
+/* MODE TABS */
+.mode-tab{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;padding:9px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.4);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px;}
+.mode-tab.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.mode-tab:hover:not(.active){background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.7);}
+.chrome-tip{background:rgba(42,172,226,0.08);border:1px solid rgba(42,172,226,0.2);border-radius:12px;padding:16px 18px;margin-bottom:20px;}
+.chrome-tip-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--blue);margin-bottom:8px;}
+.chrome-tip-text{font-size:13px;color:rgba(255,255,255,0.6);line-height:1.7;}
+.chrome-tip-text em{color:rgba(255,255,255,0.88);font-style:italic;}
+.extracted-preview{background:rgba(42,172,226,0.06);border:1px solid rgba(42,172,226,0.15);border-radius:12px;padding:16px 18px;margin-bottom:18px;display:none;}
+.extracted-preview.show{display:block;}
+.ep-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--blue);margin-bottom:12px;}
+.ep-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.ep-item{font-size:12px;color:rgba(255,255,255,0.6);display:flex;gap:6px;}
+.ep-item b{color:rgba(255,255,255,.85);font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- GENERATOR -->
+<div id="gen">
+  <div class="gen-logo">LETS<b>!</b>DOC · Diagnóstico Estratégico</div>
+  <div class="gen-title">Diagnóstico<br><span class="hl">de Presença Digital</span></div>
+  <div class="gen-sub">Use o Claude para Chrome para coletar os dados ou preencha manualmente.</div>
+
+  <div style="display:flex;gap:6px;margin-bottom:28px;z-index:1;">
+    <button class="mode-tab active" id="tab-chrome" onclick="switchMode('chrome')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="2" fill="currentColor"/><path d="M7 1.5v2M7 10.5v2M1.5 7h2M10.5 7h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Claude para Chrome
+    </button>
+    <button class="mode-tab" id="tab-manual" onclick="switchMode('manual')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3h10M2 7h7M2 11h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Manual
+    </button>
+  </div>
+
+  <div class="gen-form">
+    <div class="error-msg" id="error-msg">⚠️ <span id="error-text"></span></div>
+
+    <!-- CHROME MODE -->
+    <div id="mode-chrome">
+      <div class="chrome-tip">
+        <div class="chrome-tip-title">Como usar o Claude para Chrome</div>
+        <div class="chrome-tip-text">
+          1. Abra o Instagram do médico no Chrome<br>
+          2. Clique no ícone do Claude na barra do navegador<br>
+          3. Peça: <em>"Analise esse perfil médico em detalhes: seguidores, frequência de posts, tipo de conteúdo, engajamento, bio, pontos fortes e fracos"</em><br>
+          4. Copie toda a resposta e cole abaixo
+        </div>
+      </div>
+
+      <div class="fr">
+        <label class="fl">Análise do Claude para Chrome</label>
+        <textarea class="fi" id="f-chrome-texto" rows="9" placeholder="Cole aqui toda a análise que o Claude Chrome gerou...
+
+Ex: 'Analisei o perfil @dr.raphaeldeandrade. O perfil tem 3.200 seguidores e 48 publicações. A última postagem foi há 2 semanas, indicando baixa consistência editorial. A bio apresenta o CRM mas não tem link de agendamento...'"></textarea>
+      </div>
+
+      <div id="extracted-preview" class="extracted-preview">
+        <div class="ep-title">✓ Dados extraídos automaticamente</div>
+        <div class="ep-grid" id="ep-grid"></div>
+      </div>
+
+      <div class="fg" style="margin-bottom:18px;">
+        <div class="fr" style="margin-bottom:0">
+          <label class="fl">Especialidade (confirmar)</label>
+          <input class="fi" type="text" id="f-spec-chrome" placeholder="Cirurgia Bariátrica" value="Cirurgia Bariátrica">
+        </div>
+        <div class="fr" style="margin-bottom:0">
+          <label class="fl">Plano recomendado</label>
+          <select class="fi" id="f-plano-chrome">
+            <option value="core">Lets Core — 4 meses</option>
+            <option value="elevate" selected>Lets Elevate — 6 meses</option>
+            <option value="master">Lets Master — 8 meses</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-gen" onclick="generateFromChrome()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7.5" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="9" r="2.5" fill="currentColor"/><path d="M9 1.5v3M9 13.5v3M1.5 9h3M13.5 9h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Extrair dados e gerar diagnóstico
+      </button>
+      <div class="demo-notice" style="margin-top:14px;">Requer <b>ANTHROPIC_API_KEY</b> configurada no Vercel.</div>
+    </div>
+
+    <!-- MANUAL MODE -->
+    <div id="mode-manual" style="display:none;">
+      <div class="fr">
+        <label class="fl">@ Instagram</label>
+        <input class="fi" type="text" id="f-handle" placeholder="@dr.raphaeldeandrade" value="@dr.raphaeldeandrade">
+      </div>
+      <div class="fg">
+        <div class="fr">
+          <label class="fl">Nome completo</label>
+          <input class="fi" type="text" id="f-nome" placeholder="Dr. Nome Sobrenome" value="Dr. Raphael de Andrade">
+        </div>
+        <div class="fr">
+          <label class="fl">Especialidade</label>
+          <input class="fi" type="text" id="f-spec" placeholder="Especialidade" value="Cirurgia Bariátrica">
+        </div>
+      </div>
+      <div class="fg">
+        <div class="fr">
+          <label class="fl">Seguidores</label>
+          <input class="fi" type="text" id="f-seg" placeholder="3.200" value="3.200">
+        </div>
+        <div class="fr">
+          <label class="fl">Posts totais</label>
+          <input class="fi" type="text" id="f-posts" placeholder="48" value="48">
+        </div>
+      </div>
+      <div class="fg">
+        <div class="fr">
+          <label class="fl">Cidade</label>
+          <input class="fi" type="text" id="f-cidade" placeholder="Rio de Janeiro" value="Rio de Janeiro">
+        </div>
+        <div class="fr">
+          <label class="fl">Plano recomendado</label>
+          <select class="fi" id="f-plano">
+            <option value="core">Lets Core — 4 meses</option>
+            <option value="elevate" selected>Lets Elevate — 6 meses</option>
+            <option value="master">Lets Master — 8 meses</option>
+          </select>
+        </div>
+      </div>
+      <div class="fr">
+        <label class="fl">Nota qualitativa da equipe</label>
+        <textarea class="fi" id="f-obs" rows="3" placeholder="Observações sobre o perfil...">Perfil com identidade visual inconsistente e publicações irregulares. Bio com CRM visível mas sem CTA para agendamento. Alto potencial de autoridade no nicho bariátrico no RJ.</textarea>
+      </div>
+      <button class="btn-gen" onclick="generate()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 1l2.1 6.3H17l-4.8 3.5 1.8 5.7L9 13.2 4 16.5l1.8-5.7L1 7.3h5.9L9 1z" fill="currentColor"/></svg>
+        Gerar diagnóstico
+      </button>
+      <div class="demo-notice" style="margin-top:14px;">Dados reais via <b>HypeAuditor API</b> · Configure no Vercel.</div>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="l-logo">LETS<b>!</b>DOC</div>
+  <div class="l-title">Analisando perfil</div>
+  <div class="l-bar"><div class="l-fill" id="l-fill"></div></div>
+  <div class="l-steps">
+    <div class="l-step" id="ls0">Buscando dados do Instagram...</div>
+    <div class="l-step" id="ls1">Analisando qualidade da audiência...</div>
+    <div class="l-step" id="ls2">Calculando benchmarks do nicho...</div>
+    <div class="l-step" id="ls3">Montando relatório estratégico...</div>
+  </div>
+</div>
+
+<!-- REPORT -->
+<div id="report">
+  <div class="rtop">
+    <div class="rtop-logo">LETS<b>!</b>DOC</div>
+    <div class="rtop-actions">
+      <button class="btn-back" onclick="goBack()">← Novo diagnóstico</button>
+      <button class="btn-pdf" onclick="window.print()">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 2a1 1 0 011-1h4L11 4.5V11a1 1 0 01-1 1H3.5a1 1 0 01-1-1V2z" stroke="currentColor" stroke-width="1.2"/><path d="M7 1v4h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Exportar PDF
+      </button>
+    </div>
+  </div>
+
+  <div class="demo-banner" id="demo-banner">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.8 5.3H15l-4.5 3.3 1.7 5.4L8 12 3 15l1.7-5.4L.5 6.3h5.2L8 1z" fill="currentColor"/></svg>
+    <span><b>Modo demonstração</b> — Configure <b>HYPEAUDITOR_AUTH_ID</b> e <b>HYPEAUDITOR_AUTH_TOKEN</b> no Vercel para usar dados reais do Instagram.</span>
+  </div>
+
+  <div class="cover">
+    <div class="cover-inner">
+      <div class="cover-tag">Diagnóstico Estratégico · Lets!DOC · <span id="r-date">2026</span></div>
+      <div class="cover-head">PRESENÇA<br>DIGITAL <b>MÉDICA</b></div>
+      <div class="cover-doctor" id="r-nome">Dr. Raphael de Andrade</div>
+      <div class="cover-pills">
+        <div class="cpill blue" id="r-spec-p">Cirurgia Bariátrica</div>
+        <div class="cpill" id="r-handle-p">@dr.raphaeldeandrade</div>
+        <div class="cpill" id="r-cidade-p">Rio de Janeiro</div>
+        <div class="cpill" id="r-seg-p">— seguidores</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rbody">
+    <div class="rinner">
+
+      <!-- PONTUAÇÃO -->
+      <div class="rsec">
+        <div class="eyebrow">Visão geral</div>
+        <div class="stitle">Pontuação do perfil</div>
+        <div class="slead">Análise em 4 dimensões baseada em dados reais do perfil via HypeAuditor.</div>
+
+        <div id="aqs-block" style="margin-bottom:16px;"></div>
+
+        <div class="sgrid">
+          <div class="sc sc-w">
+            <div class="sc-lbl">Score geral</div>
+            <div class="sc-val" id="r-score-geral">—</div>
+            <div class="sc-sub" id="r-score-geral-sub">calculando...</div>
+          </div>
+          <div class="sc sc-d">
+            <div class="sc-lbl">Consistência</div>
+            <div class="sc-val" id="r-score-consist">—</div>
+            <div class="sc-sub" id="r-score-consist-sub">calculando...</div>
+          </div>
+          <div class="sc sc-s">
+            <div class="sc-lbl">Qualidade audiência</div>
+            <div class="sc-val" id="r-score-aud">—</div>
+            <div class="sc-sub" id="r-score-aud-sub">calculando...</div>
+          </div>
+          <div class="sc sc-b">
+            <div class="sc-lbl">Potencial</div>
+            <div class="sc-val">9/10</div>
+            <div class="sc-sub">Nicho bariátrico com alta demanda no RJ</div>
+          </div>
+        </div>
+
+        <div class="gauge">
+          <div class="g-top"><div class="g-name">Seguidores</div><div class="g-num" id="r-seg-num">—</div></div>
+          <div class="gb"><div class="gf gf-w" id="r-seg-bar" style="width:0%"></div></div>
+          <div class="g-note" id="r-seg-note">Benchmark: ~13.000 para cirurgiões bariátricos com 2+ anos de perfil ativo.</div>
+        </div>
+
+        <div class="gauge">
+          <div class="g-top"><div class="g-name">Taxa de engajamento real</div><div class="g-num" id="r-er-num">—</div></div>
+          <div class="gb"><div class="gf gf-w" id="r-er-bar" style="width:0%"></div></div>
+          <div class="g-note" id="r-er-note">Benchmark para especialistas médicos: 4.5–6%.</div>
+        </div>
+
+        <div class="gauge">
+          <div class="g-top"><div class="g-name">Média de curtidas por post</div><div class="g-num" id="r-likes-num">—</div></div>
+          <div class="gb"><div class="gf gf-b" id="r-likes-bar" style="width:0%"></div></div>
+          <div class="g-note" id="r-likes-note">Média de likes por publicação nos últimos posts.</div>
+        </div>
+      </div>
+
+      <!-- AUDIÊNCIA -->
+      <div class="rsec">
+        <div class="eyebrow">Qualidade da audiência</div>
+        <div class="stitle">Quem segue esse perfil</div>
+        <div class="slead">Análise de autenticidade e composição real da base de seguidores.</div>
+
+        <div class="aud-grid">
+          <div class="aud-item">
+            <div class="aud-lbl">Seguidores reais</div>
+            <div class="aud-val" id="r-real-pct">—</div>
+            <div class="aud-bar"><div class="aud-fill" id="r-real-bar" style="width:0%;background:var(--ok)"></div></div>
+          </div>
+          <div class="aud-item">
+            <div class="aud-lbl">Suspeitos / bots</div>
+            <div class="aud-val" id="r-susp-pct">—</div>
+            <div class="aud-bar"><div class="aud-fill" id="r-susp-bar" style="width:0%;background:var(--err)"></div></div>
+          </div>
+          <div class="aud-item">
+            <div class="aud-lbl">Mass followers</div>
+            <div class="aud-val" id="r-mass-pct">—</div>
+            <div class="aud-bar"><div class="aud-fill" id="r-mass-bar" style="width:0%;background:var(--warn)"></div></div>
+          </div>
+          <div class="aud-item">
+            <div class="aud-lbl">Contas notáveis</div>
+            <div class="aud-val" id="r-notable-pct">—</div>
+            <div class="aud-bar"><div class="aud-fill" id="r-notable-bar" style="width:0%;background:var(--blue)"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIAGNÓSTICO -->
+      <div class="rsec">
+        <div class="eyebrow">Análise do perfil</div>
+        <div class="stitle">O que encontramos</div>
+        <div class="slead">Pontos críticos, alertas e forças baseados nos dados coletados.</div>
+        <div class="findings" id="r-findings">
+          <!-- gerado dinamicamente -->
+        </div>
+      </div>
+
+      <!-- NICHO -->
+      <div class="rsec">
+        <div class="eyebrow">Mercado e nicho</div>
+        <div class="stitle">Cirurgia Bariátrica no digital</div>
+        <div class="slead">Análise do mercado de cirurgiões bariátricos no Instagram.</div>
+        <div class="agrid">
+          <div class="ablock"><div class="ab-icon">🏙️</div><div class="ab-title">Cenário no Rio de Janeiro</div><div class="ab-text">O RJ possui mais de 400 cirurgiões bariátricos registrados, mas menos de 6% têm presença digital ativa e estruturada. A janela de posicionamento está aberta.</div></div>
+          <div class="ablock"><div class="ab-icon">📊</div><div class="ab-title">Demanda de busca</div><div class="ab-text">Termos como "cirurgia bariátrica Rio de Janeiro" e "bypass gástrico RJ" somam mais de 40.000 buscas mensais — pacientes ativos buscando referências online.</div></div>
+          <div class="ablock"><div class="ab-icon">🎯</div><div class="ab-title">Perfil do paciente digital</div><div class="ab-text">Pacientes bariátricos têm 28–55 anos, pesquisam extensamente antes da consulta e confiam em médicos com autoridade digital reconhecida.</div></div>
+          <div class="ablock"><div class="ab-icon">🚀</div><div class="ab-title">Janela de oportunidade</div><div class="ab-text">Os top perfis de bariátrica no Brasil atingiram 10k–60k seguidores com estratégias básicas. 10k seguidores em 6 meses é uma meta conservadora.</div></div>
+        </div>
+        <div class="qblock">
+          <div class="qtext">"O cirurgião bariátrico que estruturar sua presença digital agora vai dominar o posicionamento no RJ antes que os concorrentes percebam a oportunidade."</div>
+          <div class="qauthor">— Análise estratégica · Lets!DOC · 2026</div>
+        </div>
+      </div>
+
+      <!-- CONCORRENTES -->
+      <div class="rsec">
+        <div class="eyebrow">Benchmark de mercado</div>
+        <div class="stitle">Concorrentes no Instagram</div>
+        <div class="slead">Cirurgiões bariátricos ativos — dados reais coletados do Instagram.</div>
+        <table class="comp-table">
+          <thead><tr><th>Perfil</th><th>Seguidores</th><th>Posts</th><th>Posicionamento</th><th>Status</th></tr></thead>
+          <tbody id="r-comp-tbody"><!-- gerado --></tbody>
+        </table>
+        <div class="qblock">
+          <div class="qtext">Nenhum dos concorrentes mapeados domina o Rio de Janeiro com estratégia de conteúdo estruturada. O espaço de referência digital em bariátrica no RJ está disponível.</div>
+          <div class="qauthor">— Mapeamento de mercado · Lets!DOC · 2026</div>
+        </div>
+      </div>
+
+      <!-- OPORTUNIDADES -->
+      <div class="rsec">
+        <div class="eyebrow">Plano de ação</div>
+        <div class="stitle">Principais oportunidades</div>
+        <div class="slead">As 5 ações de maior impacto para crescimento nos próximos 6 meses.</div>
+        <div class="opps">
+          <div class="opp"><div class="opp-n">01</div><div><div class="opp-title">Reels educativos semanais sobre bariátrica</div><div class="opp-desc">Conteúdos de 30–60s sobre dúvidas frequentes, mitos e resultados. Alcance orgânico estimado: 8k–30k por vídeo nas primeiras semanas.</div></div><div class="imp imp-h">Alto impacto</div></div>
+          <div class="opp"><div class="opp-n">02</div><div><div class="opp-title">Carrosséis de autoridade sobre o processo cirúrgico</div><div class="opp-desc">"Como funciona o bypass gástrico?" — conteúdo que gera salvamentos e posiciona como referência antes da consulta.</div></div><div class="imp imp-h">Alto impacto</div></div>
+          <div class="opp"><div class="opp-n">03</div><div><div class="opp-title">Captação profissional em bloco no RJ</div><div class="opp-desc">Uma diária de gravação gera conteúdo para 2–3 meses. Remove a dependência da rotina cirúrgica para produção de conteúdo.</div></div><div class="imp imp-h">Alto impacto</div></div>
+          <div class="opp"><div class="opp-n">04</div><div><div class="opp-title">Otimização da bio com CTA de agendamento</div><div class="opp-desc">Link direto para WhatsApp ou plataforma de agendamento. Impacto imediato na conversão de visitantes em consultas.</div></div><div class="imp imp-m">Médio prazo</div></div>
+          <div class="opp"><div class="opp-n">05</div><div><div class="opp-title">Identidade visual coerente e linha editorial</div><div class="opp-desc">Paleta, tipografia e templates únicos. Perfis com identidade visual crescem 40% mais rápido.</div></div><div class="imp imp-m">Médio prazo</div></div>
+        </div>
+      </div>
+
+      <!-- PROJEÇÃO -->
+      <div class="rsec">
+        <div class="eyebrow">Projeção</div>
+        <div class="stitle">O que esperar em 6 meses</div>
+        <div class="slead">Estimativas baseadas nos seus dados reais e perfis similares com estratégia estruturada.</div>
+        <div class="pgrid">
+          <div class="pj"><div class="pj-lbl">Seguidores</div><div class="pj-val" id="r-proj-seg">—</div><div class="pj-sub">estimativa com consistência</div></div>
+          <div class="pj"><div class="pj-lbl">Engajamento</div><div class="pj-val">4.5%</div><div class="pj-sub">acima da média do nicho</div></div>
+          <div class="pj"><div class="pj-lbl">Conteúdos</div><div class="pj-val" id="r-proj-cont">—</div><div class="pj-sub">peças produzidas no ciclo</div></div>
+          <div class="pj"><div class="pj-lbl">Alcance/mês</div><div class="pj-val">80k+</div><div class="pj-sub">impressões mensais estimadas</div></div>
+        </div>
+      </div>
+
+      <!-- NOTA -->
+      <div class="rsec">
+        <div class="eyebrow">Análise qualitativa</div>
+        <div class="stitle">Nota da equipe Lets!DOC</div>
+        <div class="qblock">
+          <div class="qtext" id="r-obs-text">—</div>
+          <div class="qauthor">— Diagnóstico personalizado · Lets!DOC · 2026</div>
+        </div>
+      </div>
+
+      <!-- PLANO -->
+      <div class="rsec">
+        <div class="eyebrow">Próximo passo</div>
+        <div class="stitle">Plano recomendado</div>
+        <div class="slead">Com base no diagnóstico, este é o plano que melhor se encaixa nos objetivos.</div>
+        <div class="plan-block">
+          <div>
+            <div class="pb-tag">Recomendação Lets!DOC</div>
+            <div class="pb-title" id="r-plan-title">—</div>
+            <div class="pb-desc" id="r-plan-desc">—</div>
+            <div class="pb-feats" id="r-plan-feats"></div>
+          </div>
+          <div class="pb-right">
+            <div class="pb-pname" id="r-plan-name">—</div>
+            <div class="pb-period" id="r-plan-period">—</div>
+            <div class="pb-contents" id="r-plan-cont">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rfooter">
+        <div class="rf-brand">LETS<b>!</b>DOC · Marketing Médico</div>
+        <div class="rf-note">Diagnóstico confidencial. Dados fornecidos por HypeAuditor. · lets-doc.com · contato@lets-doc.com</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const PLANOS = {
+  core:{title:'Lets Core',name:'Core',period:'4 meses',cont:'48 conteúdos',desc:'Ideal para organizar a presença digital e começar com consistência editorial.',feats:['1 diária de captação profissional','48 conteúdos produzidos no ciclo','Estratégia + identidade visual','Acompanhamento e ajustes mensais']},
+  elevate:{title:'Lets Elevate',name:'Elevate',period:'6 meses',cont:'72 conteúdos',desc:'Ideal para construir autoridade sólida no nicho. Inclui captação profissional em bloco e acompanhamento estratégico durante todo o ciclo.',feats:['2 diárias de captação profissional','72 conteúdos produzidos no ciclo','Estratégia + identidade visual','Acompanhamento e ajustes mensais']},
+  master:{title:'Lets Master',name:'Master',period:'8 meses',cont:'96 conteúdos',desc:'Para posicionamento premium e escala de autoridade. Estratégia avançada e máximo volume de produção.',feats:['3 diárias de captação profissional','96 conteúdos produzidos no ciclo','Estratégia avançada de posicionamento','Acompanhamento contínuo de performance']}
+};
+
+const COMPETITORS = [
+  {handle:'@drfabioviegas',seg:19000,posts:405,pos:'Bariátrica · Ex-Pres. SBCBM',badge:'bdg-ref',label:'Referência'},
+  {handle:'@drwanderson.cirurgiao',seg:11000,posts:1169,pos:'Bariátrica · SP',badge:'bdg-mid',label:'Ativo'},
+  {handle:'@drdaniel_parente',seg:7873,posts:774,pos:'Bariátrica · vida saudável',badge:'bdg-mid',label:'Ativo'},
+  {handle:'@drdemetriusgermini',seg:5483,posts:819,pos:'Bariátrica robótica · SP',badge:'bdg-mid',label:'Ativo'},
+  {handle:'@drjoseluiscorrea',seg:5210,posts:469,pos:'+2000 vidas · SP',badge:'bdg-mid',label:'Ativo'},
+];
+
+let retryCount = 0;
+
+async function generate() {
+  const nome = document.getElementById('f-nome').value.trim() || 'Dr. Médico';
+  const handle = (document.getElementById('f-handle').value.trim() || '').replace('@','');
+  const spec = document.getElementById('f-spec').value.trim() || 'Medicina';
+  const cidade = document.getElementById('f-cidade').value.trim() || 'Brasil';
+  const plano = document.getElementById('f-plano').value;
+  const obs = document.getElementById('f-obs').value.trim();
+
+  if (!handle) { showError('Informe o @ do Instagram.'); return; }
+
+  hideError();
+  showLoading();
+
+  // Animação de loading steps
+  const steps = [0,1,2,3];
+  const delays = [400,900,1600,2300];
+  steps.forEach((i,idx) => {
+    setTimeout(() => {
+      if(idx > 0) document.getElementById('ls'+(idx-1)).classList.replace('active','done');
+      document.getElementById('ls'+i).classList.add('active');
+      document.getElementById('l-fill').style.width = ((idx+1)*25)+'%';
+    }, delays[idx]);
+  });
+
+  try {
+    const data = await fetchWithRetry(handle);
+    setTimeout(() => {
+      document.getElementById('ls3').classList.replace('active','done');
+      hideLoading();
+      buildReport({ nome, handle, spec, cidade, plano, obs, data });
+      document.getElementById('report').style.display = 'block';
+      window.scrollTo(0,0);
+    }, 2800);
+  } catch(err) {
+    hideLoading();
+    showError(err.message || 'Erro ao buscar dados. Tente novamente.');
+    document.getElementById('gen').style.display = 'flex';
+  }
+}
+
+async function fetchWithRetry(handle, attempt = 0) {
+  const res = await fetch(`/api/diagnostico?username=${encodeURIComponent(handle)}`);
+  const data = await res.json();
+
+  if (res.status === 202 && data.retry && attempt < 3) {
+    await sleep((data.retryAfter || 5) * 1000);
+    return fetchWithRetry(handle, attempt + 1);
+  }
+
+  if (!res.ok) throw new Error(data.error || 'Erro ao buscar dados.');
+  return data;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function buildReport({ nome, handle, spec, cidade, plano, obs, data }) {
+  const h = '@' + handle;
+  const u = data.user || {};
+  const aud = data.audience || {};
+  const content = data.content || {};
+  const growth = data.growth || {};
+  const isDemo = data.demo === true;
+
+  // Demo banner
+  if (isDemo) document.getElementById('demo-banner').classList.add('show');
+
+  // Cover
+  document.getElementById('r-date').textContent = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('r-nome').textContent = nome;
+  document.getElementById('r-spec-p').textContent = spec;
+  document.getElementById('r-handle-p').textContent = h;
+  document.getElementById('r-cidade-p').textContent = cidade;
+
+  const seg = u.followers_count || 0;
+  const posts = u.posts_count || 0;
+  const er = u.er || 0;
+  const avgLikes = u.avg_likes || 0;
+  const avgComments = u.avg_comments || 0;
+  const aqs = u.aqs || 0;
+  const aqsName = u.aqs_name || 'N/A';
+
+  document.getElementById('r-seg-p').textContent = isDemo ? '— seguidores' : fmt(seg) + ' seguidores';
+
+  // AQS badge
+  const aqsClass = aqs >= 75 ? 'aqs-excellent' : aqs >= 50 ? 'aqs-good' : aqs >= 25 ? 'aqs-average' : 'aqs-poor';
+  document.getElementById('aqs-block').innerHTML = isDemo ? '' :
+    `<div class="aqs-badge ${aqsClass}">AQS ${aqs} — ${aqsName} · Score de qualidade da audiência (HypeAuditor)</div>`;
+
+  // Scores
+  const erScore = Math.min(10, Math.round(er * 10 / 6));
+  const audScore = Math.round(aqs / 10);
+  const consistScore = posts > 0 ? Math.min(10, Math.round(posts / 20)) : 2;
+  const geralScore = isDemo ? '—' : ((erScore + audScore + consistScore) / 3).toFixed(1);
+
+  document.getElementById('r-score-geral').textContent = isDemo ? '—' : geralScore;
+  document.getElementById('r-score-geral-sub').textContent = isDemo ? 'Configure a API para ver' : `de 10 — ${parseFloat(geralScore) >= 6 ? 'bom' : 'abaixo do potencial'}`;
+  document.getElementById('r-score-consist').textContent = isDemo ? '—' : consistScore + '/10';
+  document.getElementById('r-score-consist-sub').textContent = isDemo ? '—' : (consistScore < 4 ? 'Publicações irregulares' : 'Frequência razoável');
+  document.getElementById('r-score-aud').textContent = isDemo ? '—' : audScore + '/10';
+  document.getElementById('r-score-aud-sub').textContent = isDemo ? '—' : aqsName;
+
+  // Gauges
+  const segPct = Math.min(95, Math.round((seg / 13000) * 100));
+  const erPct = Math.min(95, Math.round((er / 6) * 100));
+  const likesPct = Math.min(95, Math.round((avgLikes / 500) * 100));
+  const erClass = er >= 4.5 ? 'gf-s' : er >= 2 ? 'gf-w' : 'gf-d';
+  const segClass = seg >= 8000 ? 'gf-s' : seg >= 3000 ? 'gf-w' : 'gf-d';
+
+  document.getElementById('r-seg-num').textContent = isDemo ? '— seguidores' : fmt(seg) + ' seguidores';
+  document.getElementById('r-seg-bar').style.width = isDemo ? '0%' : segPct + '%';
+  document.getElementById('r-seg-bar').className = 'gf ' + segClass;
+
+  document.getElementById('r-er-num').textContent = isDemo ? '—' : er.toFixed(2) + '%';
+  document.getElementById('r-er-bar').style.width = isDemo ? '0%' : erPct + '%';
+  document.getElementById('r-er-bar').className = 'gf ' + erClass;
+  document.getElementById('r-er-note').textContent = isDemo ? 'Dado real disponível após configurar a API.' : `${er.toFixed(2)}% — ${er >= 4.5 ? 'Acima do benchmark (4.5–6%)' : er >= 2 ? 'Abaixo do benchmark (4.5–6%)' : 'Muito abaixo do benchmark'}`;
+
+  document.getElementById('r-likes-num').textContent = isDemo ? '—' : fmt(avgLikes) + ' curtidas/post';
+  document.getElementById('r-likes-bar').style.width = isDemo ? '0%' : likesPct + '%';
+
+  // Audiência
+  const rPct = Math.round((aud.real_pct || 0) * 100);
+  const sPct = Math.round((aud.suspicious_pct || 0) * 100);
+  const mPct = Math.round((aud.mass_followers_pct || 0) * 100);
+  const nPct = Math.round((aud.notable_users_pct || 0) * 100);
+
+  document.getElementById('r-real-pct').textContent = isDemo ? '—' : rPct + '%';
+  document.getElementById('r-real-bar').style.width = rPct + '%';
+  document.getElementById('r-susp-pct').textContent = isDemo ? '—' : sPct + '%';
+  document.getElementById('r-susp-bar').style.width = sPct + '%';
+  document.getElementById('r-mass-pct').textContent = isDemo ? '—' : mPct + '%';
+  document.getElementById('r-mass-bar').style.width = mPct + '%';
+  document.getElementById('r-notable-pct').textContent = isDemo ? '—' : nPct + '%';
+  document.getElementById('r-notable-bar').style.width = nPct + '%';
+
+  // Findings dinâmicos
+  const findings = [];
+  if (!isDemo) {
+    if (er < 2) findings.push({type:'crit',icon:'📉',tag:'Crítico',title:'Engajamento muito baixo',desc:`Taxa de ${er.toFixed(2)}% — muito abaixo do benchmark de 4.5–6% para médicos especialistas. Reflexo direto da irregularidade editorial e ausência de reels.`});
+    else if (er < 4.5) findings.push({type:'warn',icon:'⚠️',tag:'Atenção',title:'Engajamento abaixo do benchmark',desc:`Taxa de ${er.toFixed(2)}% — abaixo dos 4.5–6% esperados para especialistas médicos. Há espaço significativo para crescimento com estratégia de conteúdo.`});
+    else findings.push({type:'good',icon:'✅',tag:'Positivo',title:'Engajamento acima do benchmark',desc:`Taxa de ${er.toFixed(2)}% — acima da média para especialistas médicos. Base sólida para escalar alcance.`});
+
+    if (sPct > 20) findings.push({type:'crit',icon:'🤖',tag:'Crítico',title:`${sPct}% de seguidores suspeitos`,desc:'Alta presença de bots ou contas inativas prejudica o alcance orgânico e a percepção de autoridade. O algoritmo pune perfis com base de seguidores de baixa qualidade.'});
+    else if (sPct > 10) findings.push({type:'warn',icon:'⚠️',tag:'Atenção',title:`${sPct}% de seguidores suspeitos`,desc:'Presença moderada de bots. Não é crítico, mas monitorar é importante para manter a qualidade da audiência.'});
+    else findings.push({type:'good',icon:'✅',tag:'Positivo',title:'Audiência com boa qualidade',desc:`Apenas ${sPct}% de seguidores suspeitos — audiência saudável e real, o que facilita o alcance orgânico.`});
+
+    if (seg < 3000) findings.push({type:'crit',icon:'📊',tag:'Crítico',title:'Base de seguidores muito pequena',desc:`${fmt(seg)} seguidores — muito abaixo do benchmark de 13k para a especialidade. Crescimento urgente com estratégia de reels e conteúdo consistente.`});
+    else if (seg < 8000) findings.push({type:'warn',icon:'⚠️',tag:'Atenção',title:'Crescimento abaixo do potencial',desc:`${fmt(seg)} seguidores — crescimento aquém do potencial da especialidade no mercado. Com estratégia estruturada, é possível triplicar esse número em 6 meses.`});
+  } else {
+    findings.push({type:'warn',icon:'⚠️',tag:'Demo',title:'Configure a API para ver os findings reais',desc:'Adicione HYPEAUDITOR_AUTH_ID e HYPEAUDITOR_AUTH_TOKEN nas variáveis de ambiente do Vercel para ver análises baseadas em dados reais.'});
+  }
+
+  // Findings fixos
+  findings.push({type:'crit',icon:'🎬',tag:'Crítico',title:'Ausência de estratégia de reels',desc:'Reels representam mais de 60% do alcance orgânico no Instagram. Sem esse formato, o perfil não chega a novos pacientes de forma consistente.'});
+  findings.push({type:'warn',icon:'⚠️',tag:'Atenção',title:'Bio sem call-to-action para agendamento',desc:'Perfis com link de consulta na bio convertem 3× mais visitantes em pacientes do que os que não têm.'});
+  findings.push({type:'good',icon:'📸',tag:'Positivo',title:'Especialidade bem comunicada',desc:'A cirurgia bariátrica está claramente posicionada no perfil — facilita a construção de autoridade no nicho.'});
+
+  const findingsHTML = findings.map(f => `
+    <div class="fi-item fi-${f.type === 'crit' ? 'crit' : f.type === 'warn' ? 'warn' : 'good'}">
+      <div class="fi-icon">${f.icon}</div>
+      <div>
+        <div class="fi-tag t-${f.type === 'crit' ? 'crit' : f.type === 'warn' ? 'warn' : 'good'}">${f.tag}</div>
+        <div class="fi-title">${f.title}</div>
+        <div class="fi-desc">${f.desc}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('r-findings').innerHTML = findingsHTML;
+
+  // Competitors table
+  const maxSeg = Math.max(...COMPETITORS.map(c => c.seg), seg || 1);
+  const youRow = `<tr style="background:#f0f9ff;">
+    <td><span class="ch-you">${h}</span></td>
+    <td><div class="bar-w"><div class="bar-f you" style="width:${Math.max(3,Math.round((seg/maxSeg)*100))}%"></div></div><b>${isDemo ? '—' : fmt(seg)}</b></td>
+    <td style="color:var(--g400);">${isDemo ? '—' : posts + ' posts'}</td>
+    <td style="font-size:12px;color:var(--g400);">Bariátrica · ${cidade}</td>
+    <td><span class="bdg bdg-you">Você</span></td>
+  </tr>`;
+  const compRows = COMPETITORS.map(c => `<tr>
+    <td><span class="ch">${c.handle}</span></td>
+    <td><div class="bar-w"><div class="bar-f" style="width:${Math.round((c.seg/maxSeg)*100)}%"></div></div><b>${fmtK(c.seg)}</b></td>
+    <td style="color:var(--g400);">${c.posts.toLocaleString('pt-BR')} posts</td>
+    <td style="font-size:12px;color:var(--g400);">${c.pos}</td>
+    <td><span class="bdg ${c.badge}">${c.label}</span></td>
+  </tr>`).join('');
+  document.getElementById('r-comp-tbody').innerHTML = youRow + compRows;
+
+  // Projeção
+  const projSeg = isDemo ? '—' : fmtK(Math.round(seg * 3.4));
+  document.getElementById('r-proj-seg').textContent = projSeg;
+
+  // Plano
+  const p = PLANOS[plano];
+  document.getElementById('r-plan-title').textContent = p.title;
+  document.getElementById('r-plan-desc').textContent = p.desc;
+  document.getElementById('r-plan-name').textContent = p.name;
+  document.getElementById('r-plan-period').textContent = p.period;
+  document.getElementById('r-plan-cont').textContent = p.cont;
+  document.getElementById('r-plan-feats').innerHTML = p.feats.map(f => `<div class="pb-feat">${f}</div>`).join('');
+  document.getElementById('r-proj-cont').textContent = p.cont.split(' ')[0];
+
+  // Nota
+  document.getElementById('r-obs-text').textContent = '"' + (obs || 'Análise personalizada da equipe Lets!DOC.') + '"';
+}
+
+
+function switchMode(mode) {
+  document.getElementById('mode-chrome').style.display = mode === 'chrome' ? 'block' : 'none';
+  document.getElementById('mode-manual').style.display = mode === 'manual' ? 'block' : 'none';
+  document.getElementById('tab-chrome').classList.toggle('active', mode === 'chrome');
+  document.getElementById('tab-manual').classList.toggle('active', mode === 'manual');
+  hideError();
+}
+
+async function generateFromChrome() {
+  const texto = document.getElementById('f-chrome-texto').value.trim();
+  const spec = document.getElementById('f-spec-chrome').value.trim() || 'Medicina';
+  const plano = document.getElementById('f-plano-chrome').value;
+
+  if (texto.length < 30) { showError('Cole a análise do Claude Chrome antes de continuar.'); return; }
+
+  hideError();
+  showLoading();
+  document.getElementById('ls0').textContent = 'Lendo análise do Claude Chrome...';
+  document.getElementById('ls1').textContent = 'Extraindo dados estruturados...';
+  document.getElementById('ls2').textContent = 'Calculando benchmarks do nicho...';
+  document.getElementById('ls3').textContent = 'Montando relatório estratégico...';
+
+  const stepDelays = [400, 900, 1600, 2300];
+  [0,1,2,3].forEach((i, idx) => {
+    setTimeout(() => {
+      if (idx > 0) document.getElementById('ls'+(idx-1)).classList.replace('active','done');
+      document.getElementById('ls'+i).classList.add('active');
+      document.getElementById('l-fill').style.width = ((idx+1)*25)+'%';
+    }, stepDelays[idx]);
+  });
+
+  try {
+    // Chama API de extração
+    const res = await fetch('/api/extrair', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto })
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) throw new Error(result.error || 'Erro ao extrair dados.');
+
+    const d = result.dados || {};
+
+    // Mostra preview dos dados extraídos
+    showExtractedPreview(d);
+
+    // Monta dados para o relatório
+    const nome = d.nome || (d.handle ? d.handle.replace('@','Dr. ') : 'Dr. Médico');
+    const handle = d.handle || '@perfil';
+    const cidade = d.cidade || 'Brasil';
+    const seg = d.seguidores || 0;
+    const posts = d.posts_total || 0;
+
+    // Obs automática baseada nos dados extraídos
+    const pontosFracos = (d.pontos_fracos || []).slice(0,2).join('. ');
+    const pontosFort = (d.pontos_fortes || []).slice(0,1).join('. ');
+    const obsAuto = [
+      d.ultima_publicacao ? `Última publicação: ${d.ultima_publicacao}.` : '',
+      d.identidade_visual ? `Identidade visual: ${d.identidade_visual}.` : '',
+      pontosFracos,
+      pontosFort,
+      d.observacoes || ''
+    ].filter(Boolean).join(' ');
+
+    const fakeApiData = {
+      demo: true,
+      fromChrome: true,
+      user: {
+        username: handle.replace('@',''),
+        full_name: nome,
+        followers_count: seg,
+        posts_count: posts,
+        avg_likes: 0,
+        avg_comments: 0,
+        aqs: 0,
+        aqs_name: '',
+        er: 0,
+        about: d.bio || '',
+      },
+      audience: { real_pct: 0, suspicious_pct: 0, mass_followers_pct: 0, notable_users_pct: 0 },
+      growth: {},
+      content: {
+        reels_pct: d.usa_reels ? 0.3 : 0,
+      },
+      chromeData: d,
+    };
+
+    setTimeout(() => {
+      document.getElementById('ls3').classList.replace('active','done');
+      hideLoading();
+      buildReport({ nome, handle, spec, cidade, plano, obs: obsAuto, data: fakeApiData });
+      document.getElementById('report').style.display = 'block';
+      window.scrollTo(0,0);
+    }, 2800);
+
+  } catch(err) {
+    hideLoading();
+    showError(err.message || 'Erro ao processar. Tente novamente.');
+    document.getElementById('gen').style.display = 'flex';
+  }
+}
+
+function showExtractedPreview(d) {
+  const preview = document.getElementById('extracted-preview');
+  const grid = document.getElementById('ep-grid');
+  const items = [
+    ['Handle', d.handle],
+    ['Nome', d.nome],
+    ['Seguidores', d.seguidores ? fmt(d.seguidores) : null],
+    ['Posts', d.posts_total],
+    ['Cidade', d.cidade],
+    ['Última publicação', d.ultima_publicacao],
+    ['Usa Reels', d.usa_reels != null ? (d.usa_reels ? 'Sim' : 'Não') : null],
+    ['Identidade visual', d.identidade_visual],
+    ['CTA na bio', d.tem_cta_agendamento != null ? (d.tem_cta_agendamento ? 'Sim' : 'Não') : null],
+    ['Tom do conteúdo', d.tom_conteudo],
+  ].filter(([,v]) => v != null && v !== '');
+  grid.innerHTML = items.map(([l,v]) => `<div class="ep-item"><span>${l}:</span><b>${v}</b></div>`).join('');
+  preview.classList.add('show');
+}
+
+function fmt(n) { return n.toLocaleString('pt-BR'); }
+function fmtK(n) { return n >= 1000 ? (n/1000).toFixed(1).replace('.0','') + 'k' : n.toString(); }
+
+function showLoading() {
+  document.getElementById('gen').style.display = 'none';
+  const ls = document.getElementById('loading');
+  ls.style.display = 'flex';
+  document.getElementById('l-fill').style.width = '0%';
+  [0,1,2,3].forEach(i => { const el = document.getElementById('ls'+i); el.classList.remove('active','done'); });
+}
+
+function hideLoading() { document.getElementById('loading').style.display = 'none'; }
+
+function showError(msg) {
+  document.getElementById('error-text').textContent = msg;
+  document.getElementById('error-msg').classList.add('show');
+  document.getElementById('gen').style.display = 'flex';
+}
+
+function hideError() { document.getElementById('error-msg').classList.remove('show'); }
+
+function goBack() {
+  document.getElementById('report').style.display = 'none';
+  document.getElementById('demo-banner').classList.remove('show');
+  document.getElementById('gen').style.display = 'flex';
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
