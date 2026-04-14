@@ -3,116 +3,318 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Diagnóstico — Lets!DOC</title>
+<title>Lets!DOC — Diagnósticos</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
-body{margin:0;font-family:'Barlow',sans-serif;background:#f4f6f9;color:#0D1B2E;}
-.loading{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;background:#0a1520;}
-.loading-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;letter-spacing:2px;color:#fff;}
-.loading-logo b{color:#2AACE2;}
-.loading-ring{width:40px;height:40px;border-radius:50%;border:2px solid rgba(42,172,226,0.15);border-top-color:#2AACE2;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.err{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:#0a1520;color:rgba(255,255,255,0.5);font-size:14px;}
-.err a{color:#2AACE2;text-decoration:none;}
-#diag-container{display:none;}
+:root{
+  --blue:#2AACE2;--blue2:#1d96c8;
+  --navy:#0D1B2E;--navy2:#0a1520;
+  --bg:#f4f6f9;--bg2:#eef1f5;--card:#fff;
+  --text:#0D1B2E;--text2:rgba(13,27,46,0.55);--text3:rgba(13,27,46,0.35);
+  --line:rgba(13,27,46,0.09);
+  --ok:#16a34a;--warn:#b45309;--err:#dc2626;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* LOGIN */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--navy2);position:relative;}
+#login-screen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(42,172,226,0.15),transparent 65%);}
+.login-box{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:40px;width:100%;max-width:400px;z-index:1;}
+.login-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;letter-spacing:2px;color:#fff;text-align:center;margin-bottom:8px;}
+.login-logo b{color:var(--blue);}
+.login-sub{font-size:13px;color:rgba(255,255,255,0.3);text-align:center;margin-bottom:32px;}
+.login-label{display:block;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:7px;}
+.login-input{width:100%;font-family:'Barlow',sans-serif;font-size:14px;color:#fff;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:11px 14px;outline:none;transition:all .2s;margin-bottom:16px;}
+.login-input:focus{border-color:var(--blue);}
+.login-input::placeholder{color:rgba(255,255,255,0.2);}
+.login-btn{width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;margin-top:4px;}
+.login-btn:hover{opacity:0.9;}
+.login-err{font-size:13px;color:#f87171;text-align:center;margin-top:12px;display:none;}
+.login-err.show{display:block;}
+
+/* APP */
+#app{display:none;}
+
+/* TOPBAR */
+.topbar{background:#fff;border-bottom:1px solid var(--line);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:50;box-shadow:0 1px 8px rgba(13,27,46,0.06);}
+.topbar-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;letter-spacing:2px;color:var(--navy);}
+.topbar-logo b{color:var(--blue);}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.btn-novo{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;text-decoration:none;box-shadow:0 2px 12px rgba(42,172,226,0.25);}
+.btn-novo:hover{box-shadow:0 4px 20px rgba(42,172,226,0.4);}
+.btn-logout{font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--text2);cursor:pointer;font-family:'Barlow',sans-serif;}
+.btn-logout:hover{background:var(--bg2);}
+
+/* MAIN */
+.main{max-width:1100px;margin:0 auto;padding:40px 32px;}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:32px;text-transform:uppercase;letter-spacing:1px;color:var(--navy);margin-bottom:4px;}
+.page-sub{font-size:14px;color:var(--text2);margin-bottom:32px;}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:36px;}
+.stat-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;box-shadow:0 2px 10px rgba(13,27,46,0.05);}
+.stat-num{font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:900;color:var(--blue);line-height:1;}
+.stat-lbl{font-size:12px;color:var(--text2);margin-top:4px;font-weight:600;}
+
+/* SEARCH */
+.search-bar{display:flex;gap:12px;margin-bottom:24px;}
+.search-input{flex:1;font-family:'Barlow',sans-serif;font-size:14px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 16px;outline:none;transition:border-color .2s;}
+.search-input:focus{border-color:var(--blue);}
+.search-input::placeholder{color:var(--text3);}
+
+/* LIST */
+.diag-list{display:flex;flex-direction:column;gap:10px;}
+.diag-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;display:flex;align-items:center;gap:20px;box-shadow:0 1px 6px rgba(13,27,46,0.05);transition:border-color .2s;cursor:pointer;text-decoration:none;color:inherit;}
+.diag-card:hover{border-color:rgba(42,172,226,0.3);box-shadow:0 4px 16px rgba(13,27,46,0.1);}
+.diag-initials{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--blue2));display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:#fff;flex-shrink:0;}
+.diag-info{flex:1;min-width:0;}
+.diag-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:var(--navy);margin-bottom:3px;}
+.diag-meta{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:12px;}
+.diag-spec{font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;background:rgba(42,172,226,0.08);color:var(--blue2);border:1px solid rgba(42,172,226,0.2);}
+.diag-date{font-size:12px;color:var(--text3);}
+.diag-score{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;flex-shrink:0;width:60px;text-align:right;}
+.diag-actions{display:flex;gap:8px;flex-shrink:0;}
+.btn-ver{font-size:12px;font-weight:700;padding:7px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;cursor:pointer;font-family:'Barlow',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+.btn-del{font-size:12px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid rgba(220,38,38,0.2);background:transparent;color:#dc2626;cursor:pointer;font-family:'Barlow',sans-serif;}
+.btn-del:hover{background:#fee2e2;}
+
+/* EMPTY */
+.empty{text-align:center;padding:64px 0;}
+.empty-icon{font-size:48px;margin-bottom:16px;opacity:0.4;}
+.empty-text{font-size:16px;color:var(--text2);margin-bottom:24px;}
+
+/* LOADING */
+.loading-list{display:flex;flex-direction:column;gap:10px;}
+.skel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;height:80px;animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+
+/* MODAL DELETE */
+.modal-overlay{position:fixed;inset:0;background:rgba(13,27,46,0.5);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.show{display:flex;}
+.modal{background:#fff;border-radius:16px;padding:32px;max-width:400px;width:90%;text-align:center;}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--navy);margin-bottom:8px;}
+.modal-text{font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.6;}
+.modal-btns{display:flex;gap:10px;justify-content:center;}
+.modal-cancel{font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--text2);cursor:pointer;font-family:'Barlow',sans-serif;}
+.modal-confirm{font-size:13px;font-weight:700;padding:10px 20px;border-radius:8px;border:none;background:#dc2626;color:#fff;cursor:pointer;font-family:'Barlow',sans-serif;}
 </style>
 </head>
 <body>
 
-<div class="loading" id="loading">
-  <div class="loading-logo">LETS<b>!</b>DOC</div>
-  <div class="loading-ring"></div>
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">LETS<b>!</b>DOC</div>
+    <div class="login-sub">Plataforma de Diagnósticos</div>
+    <label class="login-label">Email</label>
+    <input class="login-input" id="l-email" type="email" placeholder="seu@email.com">
+    <label class="login-label">Senha</label>
+    <input class="login-input" id="l-senha" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="l-err">Email ou senha incorretos.</div>
+  </div>
 </div>
 
-<div class="err" id="err-screen" style="display:none">
-  <div style="font-size:32px">😕</div>
-  <div>Diagnóstico não encontrado.</div>
-  <a href="dashboard.html">← Voltar ao dashboard</a>
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">LETS<b>!</b>DOC</div>
+    <div class="topbar-right">
+      <a href="index.html" class="btn-novo">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Novo diagnóstico
+      </a>
+      <button class="btn-logout" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="page-title">Diagnósticos</div>
+    <div class="page-sub" id="page-sub">Carregando...</div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="st-total">—</div><div class="stat-lbl">Total de diagnósticos</div></div>
+      <div class="stat-card"><div class="stat-num" id="st-mes">—</div><div class="stat-lbl">Este mês</div></div>
+      <div class="stat-card"><div class="stat-num" id="st-score">—</div><div class="stat-lbl">Score médio</div></div>
+    </div>
+
+    <div class="search-bar">
+      <input class="search-input" id="search" placeholder="Buscar por nome, @ ou especialidade..." oninput="filterList()">
+    </div>
+
+    <div id="list-wrap">
+      <div class="loading-list">
+        <div class="skel"></div><div class="skel"></div><div class="skel"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div id="diag-container"></div>
+<!-- MODAL DELETE -->
+<div class="modal-overlay" id="modal-del">
+  <div class="modal">
+    <div class="modal-title">Excluir diagnóstico?</div>
+    <div class="modal-text">Essa ação não pode ser desfeita. O diagnóstico será removido permanentemente.</div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="modal-confirm" onclick="confirmDelete()">Excluir</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const SUPABASE_URL = 'https://nitqnrgcigsplythgcou.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdHFucmdjaWdzcGx5dGhnY291Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxOTU2MDYsImV4cCI6MjA5MTc3MTYwNn0.pMtef1tApq1Q2XnuhfFyQTQ7Gfh9ANncsABQK4DRWxU';
 
-async function loadDiag(){
-  const id = new URLSearchParams(location.search).get('id');
-  if(!id){ showErr(); return; }
+// Credenciais da equipe (simples, sem backend de auth)
+const USERS = {
+  'contato@lets-doc.com': '@Barbara181221',
+  'leogarsec@gmail.com': '@Barbara181221'
+};
+
+let allDiags = [];
+let deleteId = null;
+
+// ── AUTH ──
+function checkAuth(){
+  const logged = sessionStorage.getItem('ld-logged');
+  if(logged){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    loadDiags();
+  }
+}
+
+function doLogin(){
+  const email = document.getElementById('l-email').value.trim().toLowerCase();
+  const senha = document.getElementById('l-senha').value;
+  if(USERS[email] && USERS[email] === senha){
+    sessionStorage.setItem('ld-logged','1');
+    sessionStorage.setItem('ld-user', email);
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    loadDiags();
+  } else {
+    document.getElementById('l-err').classList.add('show');
+  }
+}
+
+function doLogout(){
+  sessionStorage.removeItem('ld-logged');
+  sessionStorage.removeItem('ld-user');
+  location.reload();
+}
+
+// ── SUPABASE ──
+async function sbFetch(path, opts={}){
+  const res = await fetch(SUPABASE_URL + path, {
+    ...opts,
+    headers:{
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...opts.headers
+    }
+  });
+  return res.json();
+}
+
+// ── LOAD ──
+async function loadDiags(){
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/diagnosticos?id=eq.${id}&select=*`, {
-      headers:{ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-    });
-    const data = await res.json();
-    if(!data || !data[0]){ showErr(); return; }
-    renderDiag(data[0]);
-  } catch(e){ showErr(); }
+    const data = await sbFetch('/rest/v1/diagnosticos?select=id,created_at,medico,handle,especialidade,plano,dados&order=created_at.desc');
+    allDiags = data || [];
+    renderStats();
+    renderList(allDiags);
+  } catch(e) {
+    document.getElementById('list-wrap').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Erro ao carregar. Verifique a conexão.</div></div>';
+  }
 }
 
-function showErr(){
-  document.getElementById('loading').style.display='none';
-  document.getElementById('err-screen').style.display='flex';
+function renderStats(){
+  document.getElementById('st-total').textContent = allDiags.length;
+  const now = new Date();
+  const mes = allDiags.filter(d => {
+    const dt = new Date(d.created_at);
+    return dt.getMonth()===now.getMonth() && dt.getFullYear()===now.getFullYear();
+  }).length;
+  document.getElementById('st-mes').textContent = mes;
+  const scores = allDiags.filter(d=>d.dados?.nota_geral).map(d=>d.dados.nota_geral);
+  const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+  document.getElementById('st-score').textContent = avg || '—';
+  document.getElementById('page-sub').textContent = allDiags.length
+    ? `${allDiags.length} diagnóstico${allDiags.length>1?'s':''} criado${allDiags.length>1?'s':''}`
+    : 'Nenhum diagnóstico ainda.';
 }
 
-function renderDiag(row){
-  document.getElementById('loading').style.display='none';
-  document.title = `${row.medico||'Diagnóstico'} — Lets!DOC`;
-
-  // Inject the full report HTML (rebuild from saved dados)
-  const d = row.dados || {};
-  const container = document.getElementById('diag-container');
-  container.style.display = 'block';
-
-  // Redirect to index.html with data in sessionStorage, then render
-  sessionStorage.setItem('ld-view-data', JSON.stringify(row));
-  sessionStorage.setItem('ld-view-mode', '1');
-
-  // Build a minimal iframe pointing to index with the data
-  // Actually: inject all styles + render inline
-  document.open();
-  document.write(buildReportPage(row));
-  document.close();
+function renderList(list){
+  if(!list.length){
+    document.getElementById('list-wrap').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">📋</div>
+        <div class="empty-text">Nenhum diagnóstico encontrado.</div>
+        <a href="index.html" class="btn-novo">+ Criar primeiro diagnóstico</a>
+      </div>`;
+    return;
+  }
+  document.getElementById('list-wrap').innerHTML = `<div class="diag-list">${list.map(d => {
+    const inits = (d.medico||'MD').split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
+    const score = d.dados?.nota_geral;
+    const scoreColor = score>=70?'#16a34a':score>=45?'#b45309':'#dc2626';
+    const dt = new Date(d.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+    return `<div class="diag-card" onclick="verDiag('${d.id}')">
+      <div class="diag-initials">${inits}</div>
+      <div class="diag-info">
+        <div class="diag-name">${d.medico||'Médico'}</div>
+        <div class="diag-meta">
+          ${d.handle?`<span>${d.handle}</span>`:''}
+          ${d.especialidade?`<span class="diag-spec">${d.especialidade}</span>`:''}
+          <span class="diag-date">${dt}</span>
+        </div>
+      </div>
+      ${score?`<div class="diag-score" style="color:${scoreColor}">${score}</div>`:'<div class="diag-score" style="color:var(--text3)">—</div>'}
+      <div class="diag-actions" onclick="event.stopPropagation()">
+        <a href="diagnostico.html?id=${d.id}" class="btn-ver" target="_blank">Ver</a>
+        <button class="btn-del" onclick="askDelete('${d.id}')">Excluir</button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
 }
 
-function buildReportPage(row){
-  const d = row.dados || {};
-  // Serialize data into a self-contained page that calls buildReport
-  return `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${row.medico||'Diagnóstico'} — Lets!DOC</title>
-<script>
-// Pre-load data before index.html scripts run
-window.__DIAG_DATA__ = ${JSON.stringify(row)};
-window.__VIEW_MODE__ = true;
-<\/script>
-</head>
-<body style="margin:0">
-<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a1520;flex-direction:column;gap:16px;font-family:sans-serif;">
-  <div style="font-family:sans-serif;font-weight:900;font-size:28px;letter-spacing:2px;color:#fff">LETS<b style="color:#2AACE2">!</b>DOC</div>
-  <div style="width:40px;height:40px;border-radius:50%;border:2px solid rgba(42,172,226,0.15);border-top-color:#2AACE2;animation:spin 0.8s linear infinite"></div>
-  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-  <script>
-    // Load index.html content and inject data
-    fetch('index.html')
-      .then(r=>r.text())
-      .then(html=>{
-        // Replace body content but keep our data
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        // We'll redirect with data in sessionStorage
-        sessionStorage.setItem('ld-diag-view', JSON.stringify(window.__DIAG_DATA__));
-        window.location.href = 'index.html?view=1';
-      });
-  <\/script>
-</div>
-</body>
-</html>`;
+function filterList(){
+  const q = document.getElementById('search').value.toLowerCase();
+  if(!q){ renderList(allDiags); return; }
+  const filtered = allDiags.filter(d =>
+    (d.medico||'').toLowerCase().includes(q) ||
+    (d.handle||'').toLowerCase().includes(q) ||
+    (d.especialidade||'').toLowerCase().includes(q)
+  );
+  renderList(filtered);
 }
 
-loadDiag();
+function verDiag(id){
+  window.open('diagnostico.html?id='+id,'_blank');
+}
+
+// ── DELETE ──
+function askDelete(id){
+  deleteId = id;
+  document.getElementById('modal-del').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('modal-del').classList.remove('show');
+  deleteId = null;
+}
+async function confirmDelete(){
+  if(!deleteId) return;
+  await sbFetch('/rest/v1/diagnosticos?id=eq.'+deleteId, {method:'DELETE'});
+  closeModal();
+  loadDiags();
+}
+
+checkAuth();
 </script>
 </body>
 </html>
