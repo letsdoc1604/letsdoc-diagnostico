@@ -495,7 +495,7 @@ textarea.fi{resize:none;}
 <div id="report">
 
   <div class="rtop">
-    <div class="rtop-logo">LETS<b>!</b>DOC</div>
+    <div class="rtop-logo"><a href="dashboard.html" style="text-decoration:none;color:inherit">LETS<b>!</b>DOC</a></div>
     <div class="rtop-right">
       <button class="btn-back" onclick="goBack()">← Novo</button>
       <button class="btn-edit" id="btn-edit" onclick="toggleEdit()">
@@ -966,6 +966,9 @@ async function generate(){
   document.getElementById('report').style.display='block';
   applyUploadsToReport();
   window.scrollTo(0,0);
+
+  // Salva no Supabase em background
+  sbSave(d, texto, d.nome||'Médico', d.handle||'', spec, document.querySelector('select#f-plano')?.value||'');
 }
 
 function extractLocal(t){
@@ -1289,6 +1292,54 @@ function updateNav(){
   items.forEach((el,i)=>{el.classList.toggle('active',i===cur);});
 }
 window.addEventListener('scroll',updateNav,{passive:true});
+
+// ══ SUPABASE INTEGRATION ══
+const SB_URL = 'https://nitqnrgcigsplythgcou.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdHFucmdjaWdzcGx5dGhnY291Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxOTU2MDYsImV4cCI6MjA5MTc3MTYwNn0.pMtef1tApq1Q2XnuhfFyQTQ7Gfh9ANncsABQK4DRWxU';
+
+async function sbSave(dados, texto, medico, handle, especialidade, plano){
+  try {
+    await fetch(SB_URL+'/rest/v1/diagnosticos', {
+      method:'POST',
+      headers:{
+        'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,
+        'Content-Type':'application/json','Prefer':'return=minimal'
+      },
+      body: JSON.stringify({ dados, texto_original:texto, medico, handle, especialidade, plano })
+    });
+  } catch(e){ console.warn('Erro ao salvar diagnóstico:', e); }
+}
+
+// VIEW MODE: se veio do dashboard, carrega o diagnóstico salvo
+(function(){
+  const viewData = sessionStorage.getItem('ld-diag-view');
+  if(viewData && location.search.includes('view=1')){
+    sessionStorage.removeItem('ld-diag-view');
+    try {
+      const row = JSON.parse(viewData);
+      const d = row.dados || {};
+      // Wait for DOM then render
+      window.addEventListener('load', ()=>{
+        setTimeout(()=>{
+          const spec = row.especialidade||'';
+          const wpp = '552123424680';
+          const comp = d.concorrente||'@drfabioviegas';
+          // Get all dims
+          const selDims = ALL_DIMS;
+          buildReport(d, spec, wpp, comp, selDims);
+          document.getElementById('report').style.display='block';
+          document.getElementById('gen').style.display='none';
+          applyUploadsToReport();
+          window.scrollTo(0,0);
+          // Show back to dashboard button
+          document.getElementById('btn-back').textContent = '← Dashboard';
+          document.getElementById('btn-back').onclick = ()=>{ window.location.href='dashboard.html'; };
+        }, 300);
+      });
+    } catch(e){ console.warn(e); }
+  }
+})();
+
 </script>
 </body>
 </html>
