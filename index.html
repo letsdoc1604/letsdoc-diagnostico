@@ -86,6 +86,9 @@ textarea.fi{resize:none;}
 .btn-back:hover{background:var(--bg2);color:var(--text);}
 .btn-edit{font-size:12px;font-weight:700;padding:7px 16px;border-radius:8px;border:1px solid rgba(180,83,9,0.25);background:rgba(251,191,36,0.08);color:#b45309;cursor:pointer;font-family:'Barlow',sans-serif;display:flex;align-items:center;gap:6px;transition:all .15s;}
 .btn-edit:hover{background:rgba(251,191,36,0.15);}
+.btn-salvar{font-size:12px;font-weight:700;padding:7px 16px;border-radius:8px;border:1px solid rgba(22,163,74,0.3);background:rgba(22,163,74,0.08);color:#16a34a;cursor:pointer;font-family:'Barlow',sans-serif;display:flex;align-items:center;gap:6px;transition:all .15s;}
+.btn-salvar:hover{background:rgba(22,163,74,0.15);}
+.btn-salvar.saved{background:#dcfce7;border-color:#16a34a;color:#16a34a;}
 .btn-pdf{font-size:12px;font-weight:700;padding:7px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;cursor:pointer;font-family:'Barlow',sans-serif;display:flex;align-items:center;gap:6px;box-shadow:0 2px 12px rgba(42,172,226,0.25);}
 .btn-pdf:hover{box-shadow:0 4px 20px rgba(42,172,226,0.4);}
 
@@ -497,10 +500,15 @@ textarea.fi{resize:none;}
   <div class="rtop">
     <div class="rtop-logo"><a href="dashboard.html" style="text-decoration:none;color:inherit">LETS<b>!</b>DOC</a></div>
     <div class="rtop-right">
-      <button class="btn-back" onclick="goBack()">← Novo</button>
+      <a href="dashboard.html" class="btn-back" id="btn-dashboard" style="display:none;text-decoration:none;">← Dashboard</a>
+      <button class="btn-back" onclick="goBack()" id="btn-novo">← Novo</button>
+      <button class="btn-salvar" id="btn-salvar" onclick="salvarDiag()" style="display:none;">
+        <svg width="12" height="12" viewBox="0 0 13 13" fill="none"><path d="M2 2h7l2 2v7a1 1 0 01-1 1H2a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/><path d="M4 12V7h5v5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Salvar
+      </button>
       <button class="btn-edit" id="btn-edit" onclick="toggleEdit()">
         <svg width="12" height="12" viewBox="0 0 13 13" fill="none"><path d="M9 2l2 2-7 7H2V9l7-7z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Editar textos
+        Editar
       </button>
       <button class="btn-pdf" onclick="exportPDF()">
         <svg width="12" height="12" viewBox="0 0 13 13" fill="none"><path d="M2.5 2a1 1 0 011-1h4L11 4.5V11a1 1 0 01-1 1H3.5a1 1 0 01-1-1V2z" stroke="currentColor" stroke-width="1.2"/><path d="M7 1v4h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
@@ -967,8 +975,10 @@ async function generate(){
   applyUploadsToReport();
   window.scrollTo(0,0);
 
-  // Salva no Supabase em background
-  sbSave(d, texto, d.nome||'Médico', d.handle||'', spec, document.querySelector('select#f-plano')?.value||'');
+  // Salva no Supabase e guarda dados para edição posterior
+  const planoVal = document.querySelector('select#f-plano')?.value||'';
+  currentDiagData = {dados:d, texto, medico:d.nome||'Médico', handle:d.handle||'', especialidade:spec, plano:planoVal};
+  sbSave(d, texto, d.nome||'Médico', d.handle||'', spec, planoVal);
 }
 
 function extractLocal(t){
@@ -1045,6 +1055,13 @@ const DIM_DEF={
 };
 
 function buildReport(d,spec,wpp,comp,selDims){
+  // Show report nav buttons
+  document.getElementById('btn-dashboard').style.display='inline-flex';
+  document.getElementById('btn-salvar').style.display='inline-flex';
+  document.getElementById('btn-edit').style.display='inline-flex';
+  // In view mode, hide "Novo"
+  if(window.__VIEW_MODE__) document.getElementById('btn-novo').style.display='none';
+
   const handle=d.handle||'@perfil';
   const nome=d.nome||'Dr. Médico';
   const cidade=d.cidade||'Brasil';
@@ -1281,7 +1298,14 @@ function exportPDF(){
   },120);
 }
 
-function goBack(){if(isEditing)toggleEdit();document.getElementById('report').style.display='none';document.getElementById('gen').style.display='flex';window.scrollTo(0,0);}
+function goBack(){
+  if(isEditing)toggleEdit();
+  document.getElementById('report').style.display='none';
+  document.getElementById('gen').style.display='flex';
+  document.getElementById('btn-dashboard').style.display='none';
+  document.getElementById('btn-salvar').style.display='none';
+  window.scrollTo(0,0);
+}
 function fmt(n){if(n>=1000000)return(n/1000000).toFixed(1).replace('.0','')+'M';if(n>=1000)return(n/1000).toFixed(1).replace('.0','')+'k';return n;}
 function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
 function updateNav(){
@@ -1294,50 +1318,89 @@ function updateNav(){
 window.addEventListener('scroll',updateNav,{passive:true});
 
 // ══ SUPABASE INTEGRATION ══
+let currentDiagId = null;
+let currentDiagData = null;
+
 const SB_URL = 'https://nitqnrgcigsplythgcou.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdHFucmdjaWdzcGx5dGhnY291Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxOTU2MDYsImV4cCI6MjA5MTc3MTYwNn0.pMtef1tApq1Q2XnuhfFyQTQ7Gfh9ANncsABQK4DRWxU';
 
 async function sbSave(dados, texto, medico, handle, especialidade, plano){
   try {
-    await fetch(SB_URL+'/rest/v1/diagnosticos', {
+    const res = await fetch(SB_URL+'/rest/v1/diagnosticos', {
       method:'POST',
+      headers:{
+        'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,
+        'Content-Type':'application/json','Prefer':'return=representation'
+      },
+      body: JSON.stringify({ dados, texto_original:texto, medico, handle, especialidade, plano })
+    });
+    const rows = await res.json();
+    if(rows && rows[0]) currentDiagId = rows[0].id;
+    currentDiagData = {dados, medico, handle, especialidade, plano};
+  } catch(e){ console.warn('Erro ao salvar diagnóstico:', e); }
+}
+
+async function sbUpdate(id, dados){
+  try {
+    await fetch(SB_URL+'/rest/v1/diagnosticos?id=eq.'+id, {
+      method:'PATCH',
       headers:{
         'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,
         'Content-Type':'application/json','Prefer':'return=minimal'
       },
-      body: JSON.stringify({ dados, texto_original:texto, medico, handle, especialidade, plano })
+      body: JSON.stringify({ dados })
     });
-  } catch(e){ console.warn('Erro ao salvar diagnóstico:', e); }
+  } catch(e){ console.warn('Erro ao atualizar:', e); }
 }
 
-// VIEW MODE: se veio do dashboard, carrega o diagnóstico salvo
-(function(){
-  const viewData = sessionStorage.getItem('ld-diag-view');
-  if(viewData && location.search.includes('view=1')){
-    sessionStorage.removeItem('ld-diag-view');
-    try {
-      const row = JSON.parse(viewData);
-      const d = row.dados || {};
-      // Wait for DOM then render
-      window.addEventListener('load', ()=>{
-        setTimeout(()=>{
-          const spec = row.especialidade||'';
-          const wpp = '552123424680';
-          const comp = d.concorrente||'@drfabioviegas';
-          // Get all dims
-          const selDims = ALL_DIMS;
-          buildReport(d, spec, wpp, comp, selDims);
-          document.getElementById('report').style.display='block';
-          document.getElementById('gen').style.display='none';
-          applyUploadsToReport();
-          window.scrollTo(0,0);
-          // Show back to dashboard button
-          document.getElementById('btn-back').textContent = '← Dashboard';
-          document.getElementById('btn-back').onclick = ()=>{ window.location.href='dashboard.html'; };
-        }, 300);
-      });
-    } catch(e){ console.warn(e); }
+async function salvarDiag(){
+  const btn = document.getElementById('btn-salvar');
+  btn.textContent='Salvando...';
+  btn.disabled=true;
+  if(currentDiagId){
+    // Já existe, só atualiza
+    await sbUpdate(currentDiagId, currentDiagData?.dados||{});
+  } else if(currentDiagData){
+    await sbSave(currentDiagData.dados, currentDiagData.texto||'', currentDiagData.medico, currentDiagData.handle, currentDiagData.especialidade, currentDiagData.plano);
   }
+  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 13 13" fill="none"><path d="M2 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Salvo!';
+  btn.classList.add('saved');
+  btn.disabled=false;
+  setTimeout(()=>{
+    btn.innerHTML='<svg width="12" height="12" viewBox="0 0 13 13" fill="none"><path d="M2 2h7l2 2v7a1 1 0 01-1 1H2a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/><path d="M4 12V7h5v5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> Salvar';
+    btn.classList.remove('saved');
+  }, 2500);
+}
+
+// VIEW MODE: carrega diagnóstico pelo ID na URL (?id=xxx)
+(async function(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  if(!id) return;
+  window.__VIEW_MODE__ = true;
+  try {
+    const res = await fetch(SB_URL+'/rest/v1/diagnosticos?id=eq.'+id+'&select=*',{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    const rows = await res.json();
+    if(!rows || !rows[0]) return;
+    const row = rows[0];
+    const d = row.dados || {};
+    currentDiagId = row.id;
+    currentDiagData = {dados:d, medico:row.medico, handle:row.handle, especialidade:row.especialidade, plano:row.plano};
+    // Wait for DOM
+    const tryRender = ()=>{
+      if(typeof buildReport !== 'function'){ setTimeout(tryRender,100); return; }
+      buildReport(d, row.especialidade||'', '552123424680', d.concorrente||'@drfabioviegas', ALL_DIMS);
+      document.getElementById('report').style.display='block';
+      document.getElementById('gen').style.display='none';
+      document.getElementById('loading') && (document.getElementById('loading').style.display='none');
+      applyUploadsToReport();
+      window.scrollTo(0,0);
+    };
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', tryRender);
+    else setTimeout(tryRender, 100);
+  } catch(e){ console.warn('Erro ao carregar diagnóstico:', e); }
 })();
 
 </script>
