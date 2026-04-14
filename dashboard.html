@@ -276,7 +276,7 @@ function renderList(list){
       </div>
       ${score?`<div class="diag-score" style="color:${scoreColor}">${score}</div>`:'<div class="diag-score" style="color:var(--text3)">—</div>'}
       <div class="diag-actions" onclick="event.stopPropagation()">
-        <a href="diagnostico.html?id=${d.id}" class="btn-ver" target="_blank">Ver</a>
+        <a href="index.html?id=${d.id}" class="btn-ver" target="_blank">Ver</a>
         <button class="btn-del" onclick="askDelete('${d.id}')">Excluir</button>
       </div>
     </div>`;
@@ -295,7 +295,7 @@ function filterList(){
 }
 
 function verDiag(id){
-  window.open('diagnostico.html?id='+id,'_blank');
+  window.open('index.html?id='+id,'_blank');
 }
 
 // ── DELETE ──
