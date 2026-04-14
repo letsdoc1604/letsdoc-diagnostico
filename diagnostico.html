@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico — Lets!DOC</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Barlow',sans-serif;background:#f4f6f9;color:#0D1B2E;}
+.loading{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;background:#0a1520;}
+.loading-logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;letter-spacing:2px;color:#fff;}
+.loading-logo b{color:#2AACE2;}
+.loading-ring{width:40px;height:40px;border-radius:50%;border:2px solid rgba(42,172,226,0.15);border-top-color:#2AACE2;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:#0a1520;color:rgba(255,255,255,0.5);font-size:14px;}
+.err a{color:#2AACE2;text-decoration:none;}
+#diag-container{display:none;}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="loading-logo">LETS<b>!</b>DOC</div>
+  <div class="loading-ring"></div>
+</div>
+
+<div class="err" id="err-screen" style="display:none">
+  <div style="font-size:32px">😕</div>
+  <div>Diagnóstico não encontrado.</div>
+  <a href="dashboard.html">← Voltar ao dashboard</a>
+</div>
+
+<div id="diag-container"></div>
+
+<script>
+const SUPABASE_URL = 'https://nitqnrgcigsplythgcou.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdHFucmdjaWdzcGx5dGhnY291Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxOTU2MDYsImV4cCI6MjA5MTc3MTYwNn0.pMtef1tApq1Q2XnuhfFyQTQ7Gfh9ANncsABQK4DRWxU';
+
+async function loadDiag(){
+  const id = new URLSearchParams(location.search).get('id');
+  if(!id){ showErr(); return; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/diagnosticos?id=eq.${id}&select=*`, {
+      headers:{ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    });
+    const data = await res.json();
+    if(!data || !data[0]){ showErr(); return; }
+    renderDiag(data[0]);
+  } catch(e){ showErr(); }
+}
+
+function showErr(){
+  document.getElementById('loading').style.display='none';
+  document.getElementById('err-screen').style.display='flex';
+}
+
+function renderDiag(row){
+  document.getElementById('loading').style.display='none';
+  document.title = `${row.medico||'Diagnóstico'} — Lets!DOC`;
+
+  // Inject the full report HTML (rebuild from saved dados)
+  const d = row.dados || {};
+  const container = document.getElementById('diag-container');
+  container.style.display = 'block';
+
+  // Redirect to index.html with data in sessionStorage, then render
+  sessionStorage.setItem('ld-view-data', JSON.stringify(row));
+  sessionStorage.setItem('ld-view-mode', '1');
+
+  // Build a minimal iframe pointing to index with the data
+  // Actually: inject all styles + render inline
+  document.open();
+  document.write(buildReportPage(row));
+  document.close();
+}
+
+function buildReportPage(row){
+  const d = row.dados || {};
+  // Serialize data into a self-contained page that calls buildReport
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${row.medico||'Diagnóstico'} — Lets!DOC</title>
+<script>
+// Pre-load data before index.html scripts run
+window.__DIAG_DATA__ = ${JSON.stringify(row)};
+window.__VIEW_MODE__ = true;
+<\/script>
+</head>
+<body style="margin:0">
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a1520;flex-direction:column;gap:16px;font-family:sans-serif;">
+  <div style="font-family:sans-serif;font-weight:900;font-size:28px;letter-spacing:2px;color:#fff">LETS<b style="color:#2AACE2">!</b>DOC</div>
+  <div style="width:40px;height:40px;border-radius:50%;border:2px solid rgba(42,172,226,0.15);border-top-color:#2AACE2;animation:spin 0.8s linear infinite"></div>
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  <script>
+    // Load index.html content and inject data
+    fetch('index.html')
+      .then(r=>r.text())
+      .then(html=>{
+        // Replace body content but keep our data
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        // We'll redirect with data in sessionStorage
+        sessionStorage.setItem('ld-diag-view', JSON.stringify(window.__DIAG_DATA__));
+        window.location.href = 'index.html?view=1';
+      });
+  <\/script>
+</div>
+</body>
+</html>`;
+}
+
+loadDiag();
+</script>
+</body>
+</html>
