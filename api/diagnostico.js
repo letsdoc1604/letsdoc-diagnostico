@@ -5,72 +5,47 @@
 
 const https = require('https');
 
-// ─── APIFY INSTAGRAM SCRAPER ─────────────────────────────────────────────────
-function apifyRequest(path, method, body) {
+function apifyPost(path, body) {
   return new Promise((resolve, reject) => {
-    const token = process.env.APIFY_TOKEN;
-    const data = body ? JSON.stringify(body) : null;
+    const data = JSON.stringify(body);
     const req = https.request({
       hostname: 'api.apify.com',
       path,
-      method,
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {}),
+        'Authorization': `Bearer ${process.env.APIFY_TOKEN}`,
+        'Content-Length': Buffer.byteLength(data),
       },
-      timeout: 55000,
+      timeout: 50000,
     }, (res) => {
       let out = '';
-      res.on('data', chunk => out += chunk);
+      res.on('data', c => out += c);
       res.on('end', () => {
         try { resolve(JSON.parse(out)); }
-        catch { reject(new Error('Apify resposta inválida: ' + out.slice(0, 200))); }
+        catch { reject(new Error('Apify JSON inválido: ' + out.slice(0, 200))); }
       });
     });
     req.on('error', reject);
     req.on('timeout', () => { req.destroy(); reject(new Error('Apify timeout')); });
-    if (data) req.write(data);
+    req.write(data);
     req.end();
   });
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
 async function fetchInstagramProfile(handle) {
-  // 1. Inicia o actor
-  const run = await apifyRequest(
-    '/v2/acts/apify~instagram-profile-scraper/runs?timeout=50&memory=256',
-    'POST',
+  // Modo síncrono — aguarda o resultado direto, sem polling
+  const result = await apifyPost(
+    `/v2/acts/apify~instagram-profile-scraper/run-sync-get-dataset-items?timeout=45&memory=256`,
     { usernames: [handle] }
   );
 
-  const runId = run?.data?.id;
-  if (!runId) throw new Error('Apify não retornou run ID');
+  const items = Array.isArray(result) ? result : result?.items || [];
+  const user = items[0];
 
-  // 2. Aguarda conclusão (polling)
-  let status = 'RUNNING';
-  let attempts = 0;
-  while (status === 'RUNNING' || status === 'READY') {
-    await sleep(3000);
-    attempts++;
-    if (attempts > 15) throw new Error('Apify demorou demais');
-    const check = await apifyRequest(`/v2/actor-runs/${runId}`, 'GET');
-    status = check?.data?.status;
-  }
-
-  if (status !== 'SUCCEEDED') throw new Error(`Apify falhou: ${status}`);
-
-  // 3. Busca resultado
-  const datasetId = (await apifyRequest(`/v2/actor-runs/${runId}`, 'GET'))?.data?.defaultDatasetId;
-  const items = await apifyRequest(`/v2/datasets/${datasetId}/items?limit=1`, 'GET');
-  const user = Array.isArray(items) ? items[0] : items?.items?.[0];
-
-  if (!user) throw new Error('Apify não retornou dados do perfil');
+  if (!user) throw new Error('PERFIL_NAO_ENCONTRADO');
   if (user.private) throw new Error('PERFIL_PRIVADO');
-  if (!user.username) throw new Error('PERFIL_NAO_ENCONTRADO');
 
-  // 4. Formata posts recentes
   const recentPosts = (user.latestPosts || []).slice(0, 9).map(p => ({
     caption:   p.caption || '',
     likes:     p.likesCount || 0,
@@ -97,7 +72,6 @@ async function fetchInstagramProfile(handle) {
   };
 }
 
-// ─── ANTHROPIC ───────────────────────────────────────────────────────────────
 function callAnthropic(apiKey, profile) {
   const blocked = profile.source === 'blocked';
 
@@ -107,12 +81,12 @@ function callAnthropic(apiKey, profile) {
       const date    = p.timestamp ? new Date(p.timestamp * 1000).toLocaleDateString('pt-BR') : '';
       const caption = p.caption ? p.caption.slice(0, 200) : '(sem legenda)';
       const eng     = (p.likes || p.comments) ? `(${p.likes} curtidas, ${p.comments} comentários)` : '';
-      return `Post ${i+1}${date ? ' em ' + date : ''}${p.isVideo ? ' [Reel]' : ' [Foto]'}: "${caption}" ${eng}`;
+      return `Post ${i+1}${date?' em '+date:''}${p.isVideo?' [Reel]':' [Foto]'}: "${caption}" ${eng}`;
     }).join('\n');
   }
 
   const engRate = profile.followers > 0 && profile.recentPosts?.length > 0
-    ? ((profile.recentPosts.reduce((s, p) => s + (p.likes || 0) + (p.comments || 0), 0) / profile.recentPosts.length) / profile.followers * 100).toFixed(2)
+    ? ((profile.recentPosts.reduce((s,p) => s+(p.likes||0)+(p.comments||0), 0) / profile.recentPosts.length) / profile.followers * 100).toFixed(2)
     : null;
 
   const system = `Você é um especialista sênior em marketing digital médico com 10 anos de experiência no Brasil. Analisa perfis do Instagram com precisão clínica. Seu diagnóstico é direto, personalizado e cirúrgico. NUNCA usa frases genéricas. Responda APENAS em JSON válido. Sem markdown. Sem texto fora do JSON.`;
@@ -176,7 +150,6 @@ Retorne exatamente este JSON:
   });
 }
 
-// ─── HANDLER VERCEL ──────────────────────────────────────────────────────────
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -199,25 +172,14 @@ module.exports = async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY não configurada' });
 
-  const apifyToken = process.env.APIFY_TOKEN;
-
   let profile;
-
-  if (apifyToken) {
-    try {
-      profile = await fetchInstagramProfile(handle);
-    } catch (e) {
-      if (e.message === 'PERFIL_PRIVADO') {
-        return res.status(422).json({ error: `O perfil @${handle} está privado.` });
-      }
-      if (e.message === 'PERFIL_NAO_ENCONTRADO') {
-        return res.status(404).json({ error: `Perfil @${handle} não encontrado.` });
-      }
-      console.log('Apify falhou, usando fallback:', e.message);
-      profile = { handle: '@' + handle, name: handle, bio: '', website: '', followers: 0, following: 0, posts: 0, isVerified: false, isPrivate: false, profilePic: '', recentPosts: [], category: '', isBusiness: false, source: 'blocked', isMock: true };
-    }
-  } else {
-    profile = { handle: '@' + handle, name: handle, bio: '', website: '', followers: 0, following: 0, posts: 0, isVerified: false, isPrivate: false, profilePic: '', recentPosts: [], category: '', isBusiness: false, source: 'blocked', isMock: true };
+  try {
+    profile = await fetchInstagramProfile(handle);
+  } catch (e) {
+    if (e.message === 'PERFIL_PRIVADO') return res.status(422).json({ error: `O perfil @${handle} está privado.` });
+    if (e.message === 'PERFIL_NAO_ENCONTRADO') return res.status(404).json({ error: `Perfil @${handle} não encontrado.` });
+    console.log('Apify falhou, usando fallback:', e.message);
+    profile = { handle: '@'+handle, name: handle, bio: '', website: '', followers: 0, following: 0, posts: 0, isVerified: false, isPrivate: false, profilePic: '', recentPosts: [], category: '', isBusiness: false, source: 'blocked', isMock: true };
   }
 
   try {
