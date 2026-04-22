@@ -521,7 +521,7 @@ async function sendToSheet(lead) {
 
 // ── RENDER ───────────────────────────────────────────────────────────────────
 function renderProfile(p) {
-  const av = p.profilePic ? `<img class="avatar" src="${p.profilePic}" alt="${p.handle}" onerror="this.outerHTML='<div class=\\'avatar-ph\\'>👨‍⚕️</div>'">` : `<div class="avatar-ph">👨‍⚕️</div>`;
+  const av = p.profilePic     ? `<img class="avatar" src="/api/proxy-image?url=${encodeURIComponent(p.profilePic)}" alt="${p.handle}" onerror="this.outerHTML='<div class=\'avatar-ph\'>👨‍⚕️</div>'">`     : `<div class="avatar-ph">👨‍⚕️</div>`; ? `<img class="avatar" src="${p.profilePic}" alt="${p.handle}" onerror="this.outerHTML='<div class=\\'avatar-ph\\'>👨‍⚕️</div>'">` : `<div class="avatar-ph">👨‍⚕️</div>`;
   document.getElementById('profileCard').innerHTML = `${av}<div class="pmeta"><div class="p-handle">${p.handle}${p.isVerified?' ✓':''}</div>${p.name?`<div class="p-name">${p.name}</div>`:''} ${p.bio?`<div class="p-bio">"${p.bio}"</div>`:''}<div class="stats"><div><div class="stat-v">${fmtNum(p.followers)}</div><div class="stat-l">Seguidores</div></div><div><div class="stat-v">${fmtNum(p.following)}</div><div class="stat-l">Seguindo</div></div><div><div class="stat-v">${fmtNum(p.posts)}</div><div class="stat-l">Posts</div></div></div>${p.isMock?'<div class="mock-note">⚠ Dados aproximados</div>':''}</div>`;
 }
 
