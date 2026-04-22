@@ -89,7 +89,7 @@ async function fetchInstagramProfile(handle) {
     posts:      user.postsCount || 0,
     isVerified: user.verified || false,
     isPrivate:  user.private || false,
-    profilePic: user.profilePicUrl || '',
+    profilePic: user.profilePicUrlHD || user.profilePicUrl || '',
     recentPosts,
     category:   user.businessCategoryName || '',
     isBusiness: user.isBusinessAccount || false,
